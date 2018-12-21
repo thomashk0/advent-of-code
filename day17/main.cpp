@@ -1,3 +1,13 @@
+/// NOTE: This solution is purely iterative.
+/// An iteration is made of a downward vertical expansion, followed by
+/// a baking step once a wall is hit. The baking might produce new fallout points
+/// to be expanded vertically during the next iteration. This approach is
+/// pretty efficient, but makes code a bit complex and I'm not 100% sure it
+/// covers all case of a water simulation (just enough to solve the AoC
+/// problem :p).
+///
+/// TODO: Another possible solution is a pure cell-based simulation => may lead to cleaner code
+/// TODO: Some people used recursion...
 #include <cstdio>
 #include <cstdlib>
 #include <cstdint>
