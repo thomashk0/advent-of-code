@@ -332,7 +332,7 @@ namespace
 
 int main()
 {
-    puts("~~~ Advent of code 2018 -- December 16th ~~~\n\n");
+    puts("~~~ Advent of code 2018 -- Day 16 ~~~\n\n");
 
     puts("# part 1\n");
     CollisionCounter<false> counter;
