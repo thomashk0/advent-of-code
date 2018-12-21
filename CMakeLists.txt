@@ -3,7 +3,9 @@ project(advent_of_code)
 
 set(CMAKE_CXX_STANDARD 17)
 
+add_subdirectory(aoc)
 add_executable(day15 day15/main.cpp)
 add_executable(day16 day16/main.cpp)
 add_executable(day17 day17/main.cpp)
 add_executable(day18 day18/main.cpp)
+target_link_libraries(day18 aoc)

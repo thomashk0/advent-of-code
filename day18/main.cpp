@@ -6,7 +6,7 @@
 #include <algorithm>
 #include <optional>
 
-#include "utils.h"
+#include <aoc/utils.h>
 
 namespace
 {

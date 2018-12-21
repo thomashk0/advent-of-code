@@ -29,5 +29,4 @@ namespace aoc
         auto begin() const noexcept {return storage.data();}
         auto end() const  noexcept {return storage.data() + size;}
     };
-
 }

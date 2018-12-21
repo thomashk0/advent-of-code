@@ -1,0 +1,10 @@
+add_library(aoc
+        include/aoc.h
+        include/aoc/utils.h
+        src/dummy.cpp)
+target_include_directories(aoc
+        PUBLIC
+            $<INSTALL_INTERFACE:include>
+            $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
+        PRIVATE
+            ${CMAKE_CURRENT_SOURCE_DIR}/src)
