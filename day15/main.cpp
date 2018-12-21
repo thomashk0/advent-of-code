@@ -74,7 +74,7 @@ namespace
 //
 //                x++;
 //            }
-//            std::transform(s.begin(), s.end(), std::back_inserter(map.data), [](char c) {
+//            std::transform(s.begin(), s.end(), std::back_inserter(map.storage), [](char c) {
 //                if (c == 'G' || c == 'E') {
 //                    return '.';
 //                }
