@@ -1,4 +1,4 @@
-cmake_minimum_required(VERSION 3.12)
+cmake_minimum_required(VERSION 3.10)
 project(advent_of_code)
 
 set(CMAKE_CXX_STANDARD 17)
@@ -10,3 +10,5 @@ add_executable(day17 day17/main.cpp)
 add_executable(day18 day18/main.cpp)
 target_link_libraries(day18 aoc)
 add_executable(day19 day19/main.cpp)
+add_executable(day20 day20/main.cpp)
+target_link_libraries(day20 aoc)
