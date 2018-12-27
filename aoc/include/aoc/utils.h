@@ -13,7 +13,9 @@ namespace aoc
         std::size_t size{0};
         static constexpr std::size_t capacity = N;
 
-        explicit constexpr StaticVector() : storage{}, size{0} {}
+        explicit constexpr StaticVector() : storage{}, size{0}
+        {
+        }
 
         constexpr auto push_back(T el)
         {
@@ -25,13 +27,29 @@ namespace aoc
         }
 
         using value_type = T;
-        using iterator = T*;
-        constexpr auto begin() noexcept {return storage.data();}
-        constexpr auto end() noexcept {return storage.data() + size;}
+        using iterator = T *;
 
-        using const_iterator = T const*;
-        auto begin() const noexcept {return storage.data();}
-        auto end() const  noexcept {return storage.data() + size;}
+        constexpr auto begin() noexcept
+        {
+            return storage.data();
+        }
+
+        constexpr auto end() noexcept
+        {
+            return storage.data() + size;
+        }
+
+        using const_iterator = T const *;
+
+        auto begin() const noexcept
+        {
+            return storage.data();
+        }
+
+        auto end() const noexcept
+        {
+            return storage.data() + size;
+        }
     };
 
     template<typename T>
@@ -47,7 +65,7 @@ namespace aoc
             return (x == other.x) && (y == other.y);
         }
 
-        constexpr auto operator+=(Vec2<T> const& other) noexcept -> Vec2<T>&
+        constexpr auto operator+=(Vec2<T> const &other) noexcept -> Vec2<T> &
         {
             x += other.x;
             y += other.y;
@@ -68,14 +86,19 @@ namespace aoc
         }
 
         friend constexpr auto operator*(Vec2<T> p, T x) -> Vec2<T>
-        { return x * p; }
+        {
+            return x * p;
+        }
 
         constexpr auto shifted(Vec2<T> v) const noexcept -> Vec2<T>
         {
             return Vec2{x + v.x, y + v.y};
         }
 
-        constexpr auto above() const noexcept -> Vec2<T> { return shifted({0, -1}); }
+        constexpr auto above() const noexcept -> Vec2<T>
+        {
+            return shifted({0, -1});
+        }
 
         constexpr auto below() const noexcept -> Vec2<T>
         {
@@ -94,14 +117,27 @@ namespace aoc
 
         struct DefaultHash
         {
-            constexpr auto operator()(Vec2<T> const &p) const noexcept -> std::size_t
+            constexpr auto
+            operator()(Vec2<T> const &p) const noexcept -> std::size_t
             {
                 static_assert(sizeof(T) * 8 <= 32,
-                        "scalar type is too big for using this hash policy");
+                              "scalar type is too big for using this hash policy");
                 return static_cast<std::size_t>(p.x) << 32 |
                        static_cast<std::size_t>(p.y);
             }
         };
+    };
+
+
+    template<typename T>
+    struct PairHash
+    {
+        constexpr auto
+        operator()(std::pair<T, T> const &p) const noexcept -> std::size_t
+        {
+            return static_cast<std::size_t>(p.first) ^
+                   static_cast<std::size_t>(p.second);
+        }
     };
 
     template<typename Scalar, typename Value>
@@ -123,15 +159,22 @@ namespace aoc
 
         std::unordered_map<Point, Value, typename Point::DefaultHash> data;
 
-        auto insert(Point p, Value v) { data[p] = v; }
-        auto remove(Point p) { data.erase(p); }
+        auto insert(Point p, Value v)
+        {
+            data[p] = v;
+        }
+
+        auto remove(Point p)
+        {
+            data.erase(p);
+        }
 
         auto freeze(Value fill) const -> Dense2dMap<Scalar, Value>
         {
             Dense2dMap<Scalar, Value> result{};
-            auto [xmin, xmax] = xrange();
+            auto[xmin, xmax] = xrange();
             Scalar w = xmax - xmin + 1;
-            auto [ymin, ymax] = yrange();
+            auto[ymin, ymax] = yrange();
             Scalar h = ymax - ymin + 1;
             result.xmin = xmin;
             result.xmax = xmax;
@@ -140,21 +183,33 @@ namespace aoc
             result.w = w;
             result.h = h;
             result.data.resize(w * h, fill);
-            for (auto&& el : data) {
-                result.data[(el.first.y - ymin) * w + (el.first.x - xmin)] = el.second;
+            for (auto &&el : data) {
+                result.data[(el.first.y - ymin) * w +
+                            (el.first.x - xmin)] = el.second;
             }
             return result;
         }
 
-        auto operator[](Point p) -> Value& { return data[p]; }
+        auto operator[](Point p) -> Value &
+        {
+            return data[p];
+        }
 
-        auto xrange() const -> std::pair<Scalar, Scalar> {
-            auto it = std::minmax_element(data.begin(), data.end(), [](auto p, auto q) { return p.first.x < q.first.x;});
+        auto xrange() const -> std::pair<Scalar, Scalar>
+        {
+            auto it = std::minmax_element(data.begin(), data.end(),
+                                          [](auto p, auto q) {
+                                              return p.first.x < q.first.x;
+                                          });
             return {(it.first)->first.x, (it.second)->first.x};
         }
 
-        auto yrange() const -> std::pair<Scalar, Scalar> {
-            auto it = std::minmax_element(data.begin(), data.end(), [](auto p, auto q) { return p.first.y < q.first.y;});
+        auto yrange() const -> std::pair<Scalar, Scalar>
+        {
+            auto it = std::minmax_element(data.begin(), data.end(),
+                                          [](auto p, auto q) {
+                                              return p.first.y < q.first.y;
+                                          });
             return {(it.first)->first.y, (it.second)->first.y};
         }
     };
@@ -162,7 +217,11 @@ namespace aoc
     /// \name Helper for describing std::variant visitor.
     /// More info at https://en.cppreference.com/w/cpp/utility/variant/visit
     /// \{
-    template<class... Ts> struct overloaded : Ts... { using Ts::operator()...; };
+    template<class... Ts>
+    struct overloaded : Ts ...
+    {
+        using Ts::operator()...;
+    };
     template<class... Ts> overloaded(Ts...) -> overloaded<Ts...>;
     /// \}
 }

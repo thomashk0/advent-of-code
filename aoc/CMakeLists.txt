@@ -1,5 +1,6 @@
 add_library(aoc
         include/aoc.h
+        include/aoc/colors.h
         include/aoc/utils.h
         src/dummy.cpp)
 target_include_directories(aoc

@@ -1,3 +1,7 @@
+/// NOTE: the parsing can be heavily simplified: branches are only detour.
+/// In other words, the final point must be the same for every point.
+/// The parser implemented here, handles arbitrary endpoints for each branches,
+/// which is way more harder than the problem requested...
 #include <cstdio>
 #include <cstdlib>
 #include <string_view>
