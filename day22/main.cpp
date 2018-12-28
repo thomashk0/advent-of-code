@@ -46,18 +46,22 @@ namespace
         neither
     };
 
-    auto equip_str(Equip equip) -> char const*
+    auto equip_str(Equip equip) -> char const *
     {
-        switch (equip)
-        {
-            case Equip::torch: return "torch";
-            case Equip::climbing: return "climbing";
-            case Equip::neither: return "neither";
+        switch (equip) {
+            case Equip::torch:
+                return "torch";
+            case Equip::climbing:
+                return "climbing";
+            case Equip::neither:
+                return "neither";
         }
         return "?";
     }
 
-    constexpr std::initializer_list<Equip> equips = {Equip::torch, Equip::climbing, Equip::neither};
+    constexpr std::initializer_list<Equip> equips = {Equip::torch,
+                                                     Equip::climbing,
+                                                     Equip::neither};
 
     struct State
     {
@@ -79,16 +83,21 @@ namespace
             constexpr auto
             operator()(State const &s) const noexcept -> std::size_t
             {
-                return Coord::DefaultHash()(s.loc) ^ static_cast<std::size_t>(s.equip);
+                return Coord::DefaultHash()(s.loc) ^
+                       static_cast<std::size_t>(s.equip);
             }
         };
     };
 
-    auto is_valid_equip(RegionType type, Equip equip) noexcept -> bool {
+    auto is_valid_equip(RegionType type, Equip equip) noexcept -> bool
+    {
         switch (type) {
-            case RegionType::rocky: return equip != Equip::neither;
-            case RegionType::narrow: return equip != Equip::climbing;
-            case RegionType::wet: return equip != Equip::torch;
+            case RegionType::rocky:
+                return equip != Equip::neither;
+            case RegionType::narrow:
+                return equip != Equip::climbing;
+            case RegionType::wet:
+                return equip != Equip::torch;
             default:
                 return true;
         }
@@ -113,7 +122,10 @@ namespace
         return Region{geolitic_level, t};
     }
 
-    constexpr std::initializer_list<Coord> moves = {{1, 0}, {-1, 0}, {0, -1}, {0, 1}};
+    constexpr std::initializer_list<Coord> moves = {{1,  0},
+                                                    {-1, 0},
+                                                    {0,  -1},
+                                                    {0,  1}};
 
     struct Solver
     {
@@ -140,8 +152,9 @@ namespace
                 auto cy = explored[y] + aoc::manhattan_distance(y.loc, target);
                 return cx > cy;
             };
-            std::priority_queue<State, std::vector<State>, decltype(compare)> q{compare};
-            auto insert_node = [&](State const& s, int elapsed) {
+            std::priority_queue<State, std::vector<State>, decltype(compare)> q{
+                    compare};
+            auto insert_node = [&](State const &s, int elapsed) {
                 if (!is_valid(s)) { return; }
                 auto it = explored.find(s);
                 if (it != explored.end() && it->second <= elapsed) {
@@ -160,12 +173,12 @@ namespace
                 if (top.loc == target && top.equip == Equip::torch) {
                     return elapsed;
                 }
-                for (auto&& m : moves) {
+                for (auto &&m : moves) {
                     auto snext = top;
                     snext.loc += m;
                     insert_node(snext, elapsed + 1);
                 }
-                for (auto&& equip : equips) {
+                for (auto &&equip : equips) {
                     if (equip == top.equip) {
                         continue;
                     }
@@ -213,63 +226,24 @@ namespace
         }
     };
 
-    auto build_map(int depth, Coord target) -> Map
-    {
-        Map m{target.x + 1, target.y + 1, Region{}};
-        m.data[0] = make_region(depth, 0);
-        for (Scalar y = 1; y < m.h; y++) {
-            m.data[y * m.w] = make_region(depth, (48271 * y) % 20183);
-        }
-        for (Scalar x = 1; x < m.w; x++) {
-            m.data[x] = make_region(depth, (16807 * x) % 20183);
-        }
-
-        for (Scalar x = 1; x < m.w; x++) {
-            for (Scalar y = 1; y < m.h; y++) {
-                Scalar index =
-                        (erosion_level(depth, m.data[(y - 1) * m.w + x]) *
-                         erosion_level(depth, m.data[y * m.w + (x - 1)])) %
-                        20183;
-                m.data[y * m.w + x] = make_region(depth, index);
-            }
-        }
-        m.data[target.y * m.w + target.x] = make_region(depth, 0);
-        return m;
-    }
-
-
-    void part_1(int depth, Coord target)
-    {
-        auto m = build_map(depth, target);
-        m.draw_ascii([](Region x) {
-            if (x.type == RegionType::undefined) {
-                return '?';
-            } else {
-                return static_cast<char>(x.type);
-            }
-        });
-        printf("Part1: %d\n", std::accumulate(m.data.begin(), m.data.end(), 0,
-                                              [](auto acc, auto x) {
-                                                  return acc + x.risk();
-                                              }));
-    }
-
-    void part_1_bis(int depth, Coord target)
+    auto part_1(int depth, Coord target, bool debug=false) -> int
     {
         auto s = Solver{depth, target, {}};
         s.populate();
         auto m = s.map.freeze(Region{});
-        m.draw_ascii([](Region x) {
-            if (x.type == RegionType::undefined) {
-                return '?';
-            } else {
-                return static_cast<char>(x.type);
-            }
-        });
-        printf("Part1: %d\n", std::accumulate(m.data.begin(), m.data.end(), 0,
-                                              [](auto acc, auto x) {
-                                                  return acc + x.risk();
-                                              }));
+        if (debug) {
+            m.draw_ascii([](Region x) {
+                if (x.type == RegionType::undefined) {
+                    return '?';
+                } else {
+                    return static_cast<char>(x.type);
+                }
+            });
+        }
+        return std::accumulate(m.data.begin(), m.data.end(), 0,
+                               [](auto acc, auto x) {
+                                   return acc + x.risk();
+                               });
     }
 
     auto part_2(int depth, Coord target) -> int
@@ -282,14 +256,12 @@ namespace
 
 int main(int, char **)
 {
-    part_1(510, {10, 10});
-    part_1_bis(510, {10, 10});
-    // real input:
-    //      > depth: 3558
-    //      > target: 15,740
-    part_1(3558, {15, 740});
-    part_1_bis(3558, {15, 740});
-    printf("Part2: %d\n", part_2(510, {10, 10}));
+    puts("~~~ Advent of code 2018 -- Day 22 ~~~\n");
+
+    printf("(example) Part1: %d\n", part_1(510, {10, 10}));
+    printf("(example) Part2: %d\n\n", part_2(510, {10, 10}));
+
+    printf("Part1: %d\n", part_1(3558, {15, 740}));
     printf("Part2: %d\n", part_2(3558, {15, 740}));
     return 0;
 }
