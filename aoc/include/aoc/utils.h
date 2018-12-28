@@ -3,6 +3,7 @@
 #include <algorithm>
 #include <vector>
 #include <unordered_map>
+#include <cstdio>
 
 namespace aoc
 {
@@ -128,6 +129,11 @@ namespace aoc
         };
     };
 
+    template<typename T>
+    auto manhattan_distance(Vec2<T> p, Vec2<T> q) noexcept -> T
+    {
+        return std::abs(p.x - q.x) + std::abs(p.y - q.y);
+    }
 
     template<typename T>
     struct PairHash
@@ -150,6 +156,26 @@ namespace aoc
         Scalar w{};
         Scalar h{};
         std::vector<Value> data{};
+
+        explicit Dense2dMap() = default;
+
+        explicit Dense2dMap(Scalar width, Scalar height, Value fill)
+                : xmin{0}, xmax{width - 1}, ymin{0}, ymax{height}, w{width},
+                  h{height}, data(width * height, fill)
+        {
+        }
+
+        template<typename F>
+        void draw_ascii(F to_char) const
+        {
+            for (Scalar y = 0; y < h; y++) {
+                printf("%3d ", ymin + y);
+                for (Scalar x = 0; x < w; x++) {
+                    putchar(to_char(data[y * w + x]));
+                }
+                puts("");
+            }
+        }
     };
 
     template<typename Scalar, typename Value>
