@@ -1,9 +1,8 @@
 # Solutions for the Advent of Code programming puzzles
 
-Mostly written in C++17, some redundant types and utilities are factored into 
-the [aoc](./aoc) library. 
-
-*Disclaimer:* many solutions are not cleaned-up neither optimized.
+This repository contains my solutions to the [Advent of Code 2018](https://adventofcode.com/).
+Not all solution are cleaned-up neither optimized.
+They are mostly written in C++17, Haskell, Python, some redundant types and utilities are factored into the [aoc](./aoc) library.
 
 # Usage
 
@@ -12,7 +11,3 @@ $ mkdir build && cd build
 $ cmake ..
 $ make
 ```
-
-# See also
-
-* https://adventofcode.com/
