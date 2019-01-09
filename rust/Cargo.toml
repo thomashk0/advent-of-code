@@ -1,5 +1,5 @@
 [package]
-name = "sandbox"
+name = "aoc2018"
 version = "0.1.0"
 authors = ["Thomas Hiscock <thomas.hiscock@wanadoo.fr>"]
 edition = "2018"

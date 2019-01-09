@@ -7,12 +7,14 @@ use std::collections::HashMap;
 use std::process;
 pub mod days;
 
+use crate::days::*;
 type Solution = fn()->io::Result<()>;
 static DAYS : &[(i32, Solution)] = &[
-    (9, days::day9::run),
-    (10, days::day10::run),
-    (11, days::day11::run),
-    (12, days::day12::run)];
+    (9, day9::run),
+    (10, day10::run),
+    (11, day11::run),
+    (12, day12::run),
+    (13, day13::run)];
 
 pub fn main() -> io::Result<()> {
     let args: Vec<String> = env::args().collect();
