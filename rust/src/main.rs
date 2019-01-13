@@ -1,5 +1,7 @@
+#![feature(drain_filter)]
 #[macro_use] extern crate scan_fmt;
 #[macro_use] extern crate itertools;
+extern crate pathfinding;
 
 use std::io;
 use std::env;
@@ -14,7 +16,8 @@ static DAYS : &[(i32, Solution)] = &[
     (10, day10::run),
     (11, day11::run),
     (12, day12::run),
-    (13, day13::run)];
+    (13, day13::run),
+    (15, day15::run)];
 
 pub fn main() -> io::Result<()> {
     let args: Vec<String> = env::args().collect();
