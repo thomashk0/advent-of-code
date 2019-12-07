@@ -1,20 +1,11 @@
-use crate::intcode;
-use crate::intcode::IntCodeState;
-use std::fs::File;
+use crate::intcode::{IntCodeState, load_tape};
 use std::io;
-use std::io::Read;
 
-pub fn load_tape(input: &str) -> io::Result<Vec<i64>> {
-    let mut f = File::open(input)?;
-    let mut tape_str = String::new();
-    f.read_to_string(&mut tape_str)?;
-    Ok(intcode::parse_prog(tape_str.trim()).unwrap())
-}
 
 fn run_with_id(tape: Vec<i64>, id: i64) -> IntCodeState {
-    let mut cpu = intcode::IntCodeState::new();
+    let mut cpu = IntCodeState::new();
     cpu.load(tape);
-    cpu.input.push_front(id);
+    cpu.add_input(id);
     match cpu.run() {
         None => {
             eprintln!("something went wrong...");

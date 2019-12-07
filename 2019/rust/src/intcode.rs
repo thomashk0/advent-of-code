@@ -1,5 +1,8 @@
 use std::collections::VecDeque;
 use std::num::ParseIntError;
+use std::io;
+use std::fs::File;
+use std::io::Read;
 
 #[derive(Debug, Copy, Clone)]
 pub enum HaltCause {
@@ -12,7 +15,7 @@ pub enum HaltCause {
 #[derive(Debug)]
 pub struct IntCodeState {
     pub tape: Vec<i64>,
-    pub input: VecDeque<i64>,
+    input: VecDeque<i64>,
     pub output: VecDeque<i64>,
     pc: i64,
     pub halt_cause: Option<HaltCause>,
@@ -99,6 +102,14 @@ impl IntCodeState {
             return Err(HaltCause::MemoryError(true, addr));
         }
         Ok(())
+    }
+
+    pub fn add_input(&mut self, x: i64) {
+        self.input.push_front(x);
+    }
+
+    pub fn pop_output(&mut self) -> Option<i64> {
+        self.output.pop_back()
     }
 
     fn read_arg(&self, mode: u8, idx: i64) -> Result<i64, HaltCause> {
@@ -235,6 +246,13 @@ impl IntCodeState {
         eprintln!("pc:    {}", self.pc);
         eprintln!("err:   {:?}", self.halt_cause);
     }
+}
+
+pub fn load_tape(input: &str) -> io::Result<Vec<i64>> {
+    let mut f = File::open(input)?;
+    let mut tape_str = String::new();
+    f.read_to_string(&mut tape_str)?;
+    Ok(parse_prog(tape_str.trim()).unwrap())
 }
 
 #[cfg(test)]
