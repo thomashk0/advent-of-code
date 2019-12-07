@@ -12,7 +12,13 @@ pub fn day2(input: &str) -> io::Result<()> {
     cpu.load(tape.clone());
     cpu.tape[1] = 12;
     cpu.tape[2] = 2;
-    println!("part 1: {}", cpu.run().unwrap());
+    println!(
+        "part 1: {}",
+        cpu.run().unwrap_or_else(|| {
+            cpu.dump();
+            0
+        })
+    );
 
     for verb in 0..100 {
         for noun in 0..100 {

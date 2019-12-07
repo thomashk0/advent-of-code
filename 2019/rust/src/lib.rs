@@ -1,4 +1,5 @@
 pub mod day2;
+pub mod day5;
 pub mod intcode;
 
 #[cfg(test)]
