@@ -1,15 +1,15 @@
-use crate::intcode::{IntCodeState, load_tape};
-use std::collections::VecDeque;
-use std::io;
+use crate::intcode::{load_tape, IntCpu};
 use itertools;
 use itertools::Itertools;
+use std::collections::VecDeque;
 use std::convert::TryInto;
+use std::io;
 
-type Cpu = IntCodeState;
+type Cpu = IntCpu;
 
 pub struct Amp {
     stages: [Cpu; 5],
-    pub input: VecDeque<i64>
+    pub input: VecDeque<i64>,
 }
 
 fn run_stage(cpu: &mut Cpu) -> Option<i64> {
@@ -28,7 +28,7 @@ impl Amp {
     pub fn new() -> Self {
         Self {
             stages: [Cpu::new(), Cpu::new(), Cpu::new(), Cpu::new(), Cpu::new()],
-            input: VecDeque::with_capacity(128)
+            input: VecDeque::with_capacity(128),
         }
     }
 
@@ -62,8 +62,8 @@ impl Amp {
             match self.run(w) {
                 Some(x) => {
                     w = x;
-                },
-                None => break
+                }
+                None => break,
             }
         }
         w
@@ -76,19 +76,25 @@ pub fn day7(input: &str) -> io::Result<()> {
 
     {
         let perms = (0i64..=4).permutations(5);
-        let part_1 = perms.map(|p| {
-            amp.reset_phase(&tape, p.as_slice().try_into().unwrap());
-            amp.run(0).unwrap()
-        }).max().unwrap();
+        let part_1 = perms
+            .map(|p| {
+                amp.reset_phase(&tape, p.as_slice().try_into().unwrap());
+                amp.run(0).unwrap()
+            })
+            .max()
+            .unwrap();
         println!("part 1: {}", part_1);
     }
 
     {
         let perms = (5i64..=9).permutations(5);
-        let part_2 = perms.map(|p| {
-            amp.reset_phase(&tape, p.as_slice().try_into().unwrap());
-            amp.run_loop()
-        }).max().unwrap();
+        let part_2 = perms
+            .map(|p| {
+                amp.reset_phase(&tape, p.as_slice().try_into().unwrap());
+                amp.run_loop()
+            })
+            .max()
+            .unwrap();
         println!("part 2: {}", part_2);
     }
 

@@ -1,59 +1,123 @@
-use std::collections::VecDeque;
-use std::num::ParseIntError;
-use std::io;
+use std::collections::{HashMap, VecDeque};
 use std::fs::File;
+use std::io;
 use std::io::Read;
+use std::num::ParseIntError;
 
 #[derive(Debug, Copy, Clone)]
 pub enum HaltCause {
     Exit,
     InvalidPc,
     MemoryError(bool, i64),
-    DecodingFailed(i64, usize),
+    DecodeError(DecodeError),
+    NoMoreInput,
 }
 
-#[derive(Debug)]
-pub struct IntCodeState {
-    pub tape: Vec<i64>,
-    input: VecDeque<i64>,
-    pub output: VecDeque<i64>,
-    pc: i64,
-    pub halt_cause: Option<HaltCause>,
-    pub cycle: u64,
+impl From<DecodeError> for HaltCause where {
+    fn from(e: DecodeError) -> Self {
+        HaltCause::DecodeError(e)
+    }
 }
 
 #[derive(Debug, Copy, Clone)]
-pub struct Opcode {
-    code: u8,
-    param_mode_0: u8,
-    param_mode_1: u8,
-    param_mode_2: u8,
+pub enum DecodeError {
+    UnknownOpcode,
+    UnknownMode,
+    BadMode,
+    MissingData,
 }
 
-impl Opcode {
-    pub fn decode(v: i64) -> Self {
-        Opcode {
-            code: (v % 100) as u8,
-            param_mode_0: ((v / 100) % 10) as u8,
-            param_mode_1: ((v / 1000) % 10) as u8,
-            param_mode_2: ((v / 10_000) % 10) as u8,
+#[derive(Debug, Copy, Clone)]
+pub enum Operand {
+    Position(CpuWord),
+    Imm(CpuWord),
+    Relative(CpuWord),
+}
+
+impl Operand {
+    fn new(mode: u8, value: CpuWord) -> Option<Self> {
+        match mode {
+            0 => Some(Operand::Position(value)),
+            1 => Some(Operand::Imm(value)),
+            2 => Some(Operand::Relative(value)),
+            _ => None,
         }
     }
 
-    pub fn check(&self) -> Result<(), usize> {
-        match self.code {
-            1 | 2 | 3 | 4 | 5 | 6 | 7 | 8 | 99 => Ok(()),
-            _ => Err(0usize),
-        }?;
-        for (i, w) in [self.param_mode_0, self.param_mode_1, self.param_mode_2]
-            .iter()
-            .enumerate()
-        {
-            if *w >= 2 {
-                return Err(i + 1);
+    pub fn as_position(&self) -> Result<CpuWord, DecodeError> {
+        match self {
+            Operand::Position(v) => Ok(*v),
+            _ => Err(DecodeError::BadMode),
+        }
+    }
+}
+
+#[derive(Debug, Copy, Clone)]
+pub enum Op {
+    Add(Operand, Operand, Operand),
+    Mul(Operand, Operand, Operand),
+    Input(Operand),
+    Output(Operand),
+    Bnz(Operand, Operand),
+    Bez(Operand, Operand),
+    Slt(Operand, Operand, Operand),
+    Seq(Operand, Operand, Operand),
+    SetRelative(Operand),
+    Halt,
+}
+
+impl Op {
+    pub fn decode(insn: &[i64]) -> Result<(usize, Op), DecodeError> {
+        let get_idx = |i| insn.get(i).copied().ok_or(DecodeError::MissingData);
+
+        let i = get_idx(0)?;
+        let code = (i % 100) as u8;
+        let params = [
+            ((i / 100) % 10) as u8,
+            ((i / 1000) % 10) as u8,
+            ((i / 10_000) % 10) as u8,
+        ];
+        let get_arg = |i| {
+            get_idx(i).and_then(|value| {
+                Operand::new(params[i - 1], value).ok_or(DecodeError::UnknownMode)
+            })
+        };
+        let arg = [get_arg(1), get_arg(2), get_arg(3)];
+        match code {
+            1 => Ok((4, Op::Add(arg[0]?, arg[1]?, arg[2]?))),
+            2 => Ok((4, Op::Mul(arg[0]?, arg[1]?, arg[2]?))),
+            3 => Ok((2, Op::Input(arg[0]?))),
+            4 => Ok((2, Op::Output(arg[0]?))),
+            5 => Ok((3, Op::Bnz(arg[0]?, arg[1]?))),
+            6 => Ok((3, Op::Bez(arg[0]?, arg[1]?))),
+            7 => Ok((4, Op::Slt(arg[0]?, arg[1]?, arg[2]?))),
+            8 => Ok((4, Op::Seq(arg[0]?, arg[1]?, arg[2]?))),
+            9 => Ok((2, Op::SetRelative(arg[0]?))),
+            99 => Ok((1, Op::Halt)),
+            _ => Err(DecodeError::UnknownOpcode),
+        }
+    }
+}
+
+pub fn disassemble(tape: &[i64]) {
+    let mut pc = 0;
+    loop {
+        match Op::decode(&tape[pc..]) {
+            Ok((inc, op)) => {
+                println!("{:3}: {:?} {:?}\t", pc, &tape[pc..(pc + inc)], op);
+                pc += inc;
+            }
+            Err(e) => {
+                println!(
+                    "error: disassembling stopped @{} -> {} ({:?}) ",
+                    pc, tape[pc], e
+                );
+                break;
             }
         }
-        Ok(())
+        if pc >= tape.len() {
+            break;
+        }
     }
 }
 
@@ -63,12 +127,36 @@ pub fn parse_prog(data: &str) -> Result<Vec<i64>, ParseIntError> {
         .collect()
 }
 
-impl IntCodeState {
+type CpuWord = i64;
+
+#[derive(Debug)]
+pub struct IntCpu {
+    tape: Vec<CpuWord>,
+    memory: HashMap<CpuWord, CpuWord>,
+    input: VecDeque<CpuWord>,
+    output: VecDeque<CpuWord>,
+    pc: CpuWord,
+    relative_base: CpuWord,
+    halt_cause: Option<HaltCause>,
+    cycle: u64,
+}
+
+fn from_bool(b: bool) -> CpuWord {
+    if b {
+        1
+    } else {
+        0
+    }
+}
+
+impl IntCpu {
     pub fn new() -> Self {
-        IntCodeState {
-            tape: Vec::with_capacity(2048),
+        IntCpu {
+            tape: Vec::with_capacity(1024),
+            memory: HashMap::with_capacity(1024),
             input: VecDeque::with_capacity(128),
             output: VecDeque::with_capacity(128),
+            relative_base: 0,
             pc: 0,
             halt_cause: None,
             cycle: 0,
@@ -79,12 +167,14 @@ impl IntCodeState {
         self.pc = 0;
         self.halt_cause = None;
         self.cycle = 0;
+        self.relative_base = 0;
+        self.memory.clear();
         self.input.clear();
         self.output.clear();
     }
 
     pub fn load(&mut self, tape: Vec<i64>) {
-        self.tape = tape;
+        self.tape = tape.iter().map(|x| CpuWord::from(*x)).collect();
     }
 
     pub fn load_str(&mut self, tape: &str) -> Result<(), ParseIntError> {
@@ -97,121 +187,105 @@ impl IntCodeState {
         self.halt_cause.is_some()
     }
 
-    fn access(&self, addr: i64) -> Result<(), HaltCause> {
-        if addr < 0 || addr > self.tape.len() as i64 {
-            return Err(HaltCause::MemoryError(true, addr));
+    fn access(&self, addr: CpuWord) -> Result<Option<usize>, HaltCause> {
+        if addr < 0 {
+            return Err(HaltCause::MemoryError(true, addr as i64));
         }
-        Ok(())
+        if addr < self.tape.len() as CpuWord {
+            return Ok(Some(addr as usize));
+        }
+        Ok(None)
     }
 
     pub fn add_input(&mut self, x: i64) {
-        self.input.push_front(x);
+        self.input.push_front(CpuWord::from(x));
     }
 
     pub fn pop_output(&mut self) -> Option<i64> {
-        self.output.pop_back()
+        self.output.pop_back().map(|x| x as i64)
     }
 
-    fn read_arg(&self, mode: u8, idx: i64) -> Result<i64, HaltCause> {
-        match mode {
-            0 => self.tape_read(idx),
-            1 => Ok(idx),
-            _ => panic!("invalid mode"),
+    fn tape_read(&self, idx: CpuWord) -> Result<CpuWord, HaltCause> {
+        match self.access(idx)? {
+            Some(offset) => Ok(self.tape[offset]),
+            None => Ok(*self.memory.get(&idx).unwrap_or(&(0 as CpuWord))),
         }
     }
 
-    fn tape_read(&self, idx: i64) -> Result<i64, HaltCause> {
-        self.access(idx)?;
-        Ok(self.tape[idx as usize])
-    }
-
-    fn tape_write(&mut self, idx: i64, value: i64) -> Result<(), HaltCause> {
-        self.access(idx)?;
-        self.tape[idx as usize] = value;
+    fn tape_write(&mut self, idx: CpuWord, value: CpuWord) -> Result<(), HaltCause> {
+        match self.access(idx)? {
+            Some(offset) => {
+                self.tape[offset] = value;
+            }
+            None => {
+                self.memory.insert(idx, value);
+            }
+        }
         Ok(())
     }
 
-    fn get_operand(&self, op: Opcode, i: usize) -> Result<i64, HaltCause> {
-        assert!(i >= 1 && i <= 3);
-        let mode = match i {
-            1 => op.param_mode_0,
-            2 => op.param_mode_1,
-            3 => op.param_mode_2,
-            _ => unreachable!(),
-        };
-        let idx = self.tape_read(self.pc + i as i64)?;
-        self.read_arg(mode, idx)
+    fn query(&self, op: Operand) -> Result<CpuWord, HaltCause> {
+        match op {
+            Operand::Position(addr) => self.tape_read(addr),
+            Operand::Imm(imm) => Ok(imm),
+            Operand::Relative(addr) => self.tape_read(self.relative_base + addr),
+        }
+    }
+
+    fn write(&mut self, dst: Operand, value: CpuWord) -> Result<(), HaltCause> {
+        match dst {
+            Operand::Position(addr) => self.tape_write(addr, value),
+            Operand::Imm(_) => Err(HaltCause::DecodeError(DecodeError::BadMode)),
+            Operand::Relative(addr) => self.tape_write(self.relative_base + addr, value),
+        }
     }
 
     fn _step(&mut self) -> Result<(), HaltCause> {
-        if self.pc < 0 || self.pc > self.tape.len() as i64 {
+        if self.pc < 0 || self.pc > self.tape.len() as CpuWord {
             return Err(HaltCause::InvalidPc);
         }
         let pc = self.pc as usize;
-        let insn = self.tape[pc];
-        let op = Opcode::decode(insn);
-        op.check().map_err(|e| HaltCause::DecodingFailed(insn, e))?;
-        //let opcode = self.tape[pc];
-        if op.code == 99 {
-            return Err(HaltCause::Exit);
-        }
 
-        match op.code {
-            1 => {
-                let out = self.tape_read(self.pc + 3)?;
-                self.tape_write(out, self.get_operand(op, 1)? + self.get_operand(op, 2)?)?;
-                self.pc += 4;
+        // Trace instructions
+        // println!("{:3} => {:05}", pc, insn);
+
+        let (pc_step, op) = Op::decode(&self.tape[pc..])?;
+        self.pc += pc_step as CpuWord;
+        match op {
+            Op::Add(x, y, o) => {
+                self.write(o, self.query(x)? + self.query(y)?)?;
             }
-            2 => {
-                let out = self.tape_read(self.pc + 3)?;
-                self.tape_write(out, self.get_operand(op, 1)? * self.get_operand(op, 2)?)?;
-                self.pc += 4;
+            Op::Mul(x, y, o) => {
+                self.write(o, self.query(x)? * self.query(y)?)?;
             }
-            3 => {
-                let out = self.tape_read(self.pc + 1)?;
-                let w = self.input.pop_back().unwrap();
-                self.tape_write(out, w)?;
-                self.pc += 2;
+            Op::Input(o) => {
+                let w = self.input.pop_back().ok_or(HaltCause::NoMoreInput)?;
+                self.write(o, w)?;
             }
-            4 => {
-                self.output.push_front(self.get_operand(op, 1)?);
-                self.pc += 2;
-            }
-            6 => {
-                if self.get_operand(op, 1)? == 0 {
-                    self.pc = self.get_operand(op, 2)?;
-                } else {
-                    self.pc += 3;
+            Op::Output(x) => self.output.push_front(self.query(x)?),
+            Op::Bnz(x, off) => {
+                if self.query(x)? != 0 {
+                    self.pc = self.query(off)?;
                 }
             }
-            5 => {
-                if self.get_operand(op, 1)? != 0 {
-                    self.pc = self.get_operand(op, 2)?;
-                } else {
-                    self.pc += 3;
+            Op::Bez(x, off) => {
+                if self.query(x)? == 0 {
+                    self.pc = self.query(off)?;
                 }
             }
-            7 => {
-                let out = self.tape_read(self.pc + 3)?;
-                let result = if self.get_operand(op, 1)? < self.get_operand(op, 2)? {
-                    1
-                } else {
-                    0
-                };
-                self.tape_write(out, result)?;
-                self.pc += 4;
+            Op::Slt(x, y, o) => {
+                self.write(o, from_bool(self.query(x)? < self.query(y)?))?;
             }
-            8 => {
-                let out = self.tape_read(self.pc + 3)?;
-                let result = if self.get_operand(op, 1)? == self.get_operand(op, 2)? {
-                    1
-                } else {
-                    0
-                };
-                self.tape_write(out, result)?;
-                self.pc += 4;
+            Op::Seq(x, y, o) => {
+                self.write(o, from_bool(self.query(x)? == self.query(y)?))?;
             }
-            _ => panic!("code not implemented: {}", op.code),
+            Op::SetRelative(off) => {
+                self.relative_base += self.query(off)?;
+            }
+
+            Op::Halt => {
+                return Err(HaltCause::Exit);
+            }
         }
         self.cycle += 1;
         Ok(())
@@ -230,7 +304,7 @@ impl IntCodeState {
     }
 
     pub fn exit_code(&self) -> i64 {
-        self.tape[0]
+        self.tape[0] as i64
     }
 
     pub fn run(&mut self) -> Option<i64> {
@@ -255,6 +329,24 @@ pub fn load_tape(input: &str) -> io::Result<Vec<i64>> {
     Ok(parse_prog(tape_str.trim()).unwrap())
 }
 
+pub fn dump_output(cpu: &mut IntCpu) {
+    let mut is_first = true;
+    loop {
+        match cpu.pop_output() {
+            Some(w) => {
+                if is_first {
+                    is_first = false;
+                } else {
+                    print!(",")
+                }
+                print!("{}", w);
+            }
+            None => break,
+        }
+    }
+    println!();
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -271,20 +363,20 @@ mod tests {
             .iter()
             .zip([2i64, 2, 30].iter())
         {
-            let mut cpu = IntCodeState::new();
+            let mut cpu = IntCpu::new();
             cpu.load_str(v).unwrap();
             assert_eq!(cpu.run(), Some(r));
         }
     }
 
-    #[test]
-    fn decoding() {
-        let opcode = Opcode::decode(1002);
-        assert_eq!(opcode.code, 2);
-        assert_eq!(opcode.param_mode_0, 0);
-        assert_eq!(opcode.param_mode_1, 1);
-        assert_eq!(opcode.param_mode_2, 0);
-        assert!(Opcode::decode(99).check().is_ok());
-        assert!(Opcode::decode(0).check().is_err());
-    }
+    //    #[test]
+    //    fn decoding() {
+    //        let opcode = Opcode::decode(1002);
+    //        assert_eq!(opcode.code, 2);
+    //        assert_eq!(opcode.param_mode_0, 0);
+    //        assert_eq!(opcode.param_mode_1, 1);
+    //        assert_eq!(opcode.param_mode_2, 0);
+    //        assert!(Opcode::decode(99).check().is_ok());
+    //        assert!(Opcode::decode(0).check().is_err());
+    //    }
 }
