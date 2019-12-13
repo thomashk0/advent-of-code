@@ -1,5 +1,5 @@
 extern crate aoc;
-use aoc::{day11, day2, day5, day7, day9};
+use aoc::{day11, day13, day2, day5, day7, day9};
 use std::{env, process};
 
 pub fn usage(prog_name: &str) {
@@ -30,6 +30,9 @@ pub fn main() {
             eprintln!("error: {:?}", e);
         }),
         "11" => day11::day11(&args[2]).unwrap_or_else(|e| {
+            eprintln!("error: {:?}", e);
+        }),
+        "13" => day13::day13(&args[2]).unwrap_or_else(|e| {
             eprintln!("error: {:?}", e);
         }),
         _ => {
