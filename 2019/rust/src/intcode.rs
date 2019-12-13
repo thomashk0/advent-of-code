@@ -205,6 +205,10 @@ impl IntCpu {
         self.output.pop_back().map(|x| x as i64)
     }
 
+    pub fn pending_output(&self) -> usize {
+        self.output.len()
+    }
+
     fn tape_read(&self, idx: CpuWord) -> Result<CpuWord, HaltCause> {
         match self.access(idx)? {
             Some(offset) => Ok(self.tape[offset]),
@@ -241,16 +245,14 @@ impl IntCpu {
     }
 
     fn _step(&mut self) -> Result<(), HaltCause> {
+        self.cycle += 1;
+
         if self.pc < 0 || self.pc > self.tape.len() as CpuWord {
             return Err(HaltCause::InvalidPc);
         }
         let pc = self.pc as usize;
-
-        // Trace instructions
-        // println!("{:3} => {:05}", pc, insn);
-
         let (pc_step, op) = Op::decode(&self.tape[pc..])?;
-        self.pc += pc_step as CpuWord;
+        let mut pc_next = self.pc + pc_step as CpuWord;
         match op {
             Op::Add(x, y, o) => {
                 self.write(o, self.query(x)? + self.query(y)?)?;
@@ -265,12 +267,12 @@ impl IntCpu {
             Op::Output(x) => self.output.push_front(self.query(x)?),
             Op::Bnz(x, off) => {
                 if self.query(x)? != 0 {
-                    self.pc = self.query(off)?;
+                    pc_next = self.query(off)?;
                 }
             }
             Op::Bez(x, off) => {
                 if self.query(x)? == 0 {
-                    self.pc = self.query(off)?;
+                    pc_next = self.query(off)?;
                 }
             }
             Op::Slt(x, y, o) => {
@@ -287,7 +289,8 @@ impl IntCpu {
                 return Err(HaltCause::Exit);
             }
         }
-        self.cycle += 1;
+        self.pc = pc_next;
+
         Ok(())
     }
 
@@ -303,8 +306,16 @@ impl IntCpu {
             .is_err()
     }
 
+    pub fn cause(&self) -> Option<HaltCause> {
+        self.halt_cause
+    }
+
     pub fn exit_code(&self) -> i64 {
         self.tape[0] as i64
+    }
+
+    pub fn resume(&mut self) {
+        self.halt_cause = None;
     }
 
     pub fn run(&mut self) -> Option<i64> {

@@ -1,4 +1,4 @@
-use crate::intcode::{disassemble, dump_output, load_tape, IntCpu};
+use crate::intcode::{load_tape, IntCpu};
 use std::{io, process};
 
 fn run_or_die(cpu: &mut IntCpu) {
