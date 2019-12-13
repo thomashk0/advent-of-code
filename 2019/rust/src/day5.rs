@@ -1,7 +1,7 @@
 use crate::intcode::{dump_output, load_tape, IntCpu};
 use std::io;
 
-fn run_with_id(tape: Vec<i64>, id: i64) -> IntCpu {
+fn run_with_id(tape: &[i64], id: i64) -> IntCpu {
     let mut cpu = IntCpu::new();
     cpu.load(tape);
     cpu.add_input(id);
@@ -17,9 +17,9 @@ fn run_with_id(tape: Vec<i64>, id: i64) -> IntCpu {
 
 pub fn day5(input: &str) -> io::Result<()> {
     let tape = load_tape(input)?;
-    let mut s1 = run_with_id(tape.clone(), 1);
+    let mut s1 = run_with_id(&tape, 1);
     println!("part 1: {:?}", dump_output(&mut s1));
-    let mut s2 = run_with_id(tape.clone(), 5);
+    let mut s2 = run_with_id(&tape, 5);
     println!("part 2: {}", s2.pop_output().unwrap());
     Ok(())
 }

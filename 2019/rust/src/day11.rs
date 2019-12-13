@@ -28,8 +28,6 @@ pub fn limits(world: &HashMap<Vec2, i8>) -> (Vec2, Vec2) {
 
 pub fn draw(world: &HashMap<Vec2, i8>) {
     let ((xmin, xmax), (ymin, ymax)) = limits(world);
-    println!("world.len() = {:?}", world.len());
-    println!("{:?}", limits(world));
     for y in (ymin..=ymax).rev() {
         for x in xmin..=xmax {
             let c = world.get(&(x, y)).cloned().unwrap_or(0);
@@ -98,7 +96,7 @@ impl Robot {
 
 fn part_1(tape: &Vec<i64>) {
     let mut robot = Robot::new();
-    robot.brain.load(tape.clone());
+    robot.brain.load(&tape);
     let mut world: HashMap<Vec2, i8> = HashMap::with_capacity(1024);
     robot.run(&mut world).unwrap_or_else(|e| {
         eprintln!("error: simulation failed ==> ({:?})", e);
@@ -109,15 +107,15 @@ fn part_1(tape: &Vec<i64>) {
 
 fn part_2(tape: &Vec<i64>) {
     let mut robot = Robot::new();
-    robot.brain.load(tape.clone());
+    robot.brain.load(&tape);
     let mut world: HashMap<Vec2, i8> = HashMap::with_capacity(1024);
     world.insert((0, 0), 1);
     robot.run(&mut world).unwrap_or_else(|e| {
         eprintln!("error: simulation failed ==> ({:?})", e);
         robot.brain.dump();
     });
+    println!("part 2:");
     draw(&world);
-    println!("part 2");
 }
 
 pub fn day11(input: &str) -> io::Result<()> {

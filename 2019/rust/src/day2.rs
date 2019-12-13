@@ -11,7 +11,7 @@ pub fn day2(input: &str) -> io::Result<()> {
     let mut tape = intcode::parse_prog(tape_str.trim()).unwrap();
     tape[1] = 12;
     tape[2] = 2;
-    cpu.load(tape.clone());
+    cpu.load(&tape);
 
     println!(
         "part 1: {}",
@@ -26,7 +26,7 @@ pub fn day2(input: &str) -> io::Result<()> {
             tape[1] = verb;
             tape[2] = noun;
             cpu.reset();
-            cpu.load(tape.clone());
+            cpu.load(&tape);
             if cpu.run().unwrap() == 19690720 {
                 println!("part 2: {}", 100 * verb + noun)
             }

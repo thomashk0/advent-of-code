@@ -128,7 +128,7 @@ impl Arcade {
 pub fn part_1(tape: &Vec<i64>) {
     let mut world: World = HashMap::with_capacity(1024);
     let mut arcade = Arcade::new(&[]);
-    arcade.cpu.load(tape.clone());
+    arcade.cpu.load(&tape);
     arcade.run(&mut world).unwrap_or_else(|e| {
         eprintln!("simulation failed => {:?}", e);
         arcade.cpu.dump();
@@ -159,7 +159,7 @@ pub fn part_2(tape: &Vec<i64>) {
     let mut arcade = Arcade::new(&history[..]);
     let mut tape = tape.clone();
     tape[0] = 2;
-    arcade.cpu.load(tape.clone());
+    arcade.cpu.load(&tape);
     arcade.run(&mut world).unwrap_or_else(|e| {
         eprintln!("simulation failed => {:?}", e);
         arcade.cpu.dump();

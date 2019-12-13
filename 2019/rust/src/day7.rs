@@ -35,7 +35,7 @@ impl Amp {
     fn reset_tape(&mut self, tape: &Vec<i64>) {
         for cpu in self.stages.iter_mut() {
             cpu.reset();
-            cpu.load(tape.clone());
+            cpu.load(&tape);
         }
     }
 

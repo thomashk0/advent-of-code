@@ -173,13 +173,13 @@ impl IntCpu {
         self.output.clear();
     }
 
-    pub fn load(&mut self, tape: Vec<i64>) {
+    pub fn load(&mut self, tape: &[i64]) {
         self.tape = tape.iter().map(|x| CpuWord::from(*x)).collect();
     }
 
     pub fn load_str(&mut self, tape: &str) -> Result<(), ParseIntError> {
         let v = parse_prog(tape)?;
-        self.load(v);
+        self.load(&v);
         Ok(())
     }
 
