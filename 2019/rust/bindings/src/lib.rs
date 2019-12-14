@@ -18,6 +18,13 @@ pub extern "C" fn icpu_create() -> *mut IntCpu {
 }
 
 #[no_mangle]
+pub unsafe extern "C" fn icpu_clone(ptr: *mut IntCpu) -> *mut IntCpu {
+    let other = &mut *ptr;
+    let cpu = other.clone();
+    Box::into_raw(Box::new(cpu))
+}
+
+#[no_mangle]
 pub unsafe extern "C" fn icpu_reset(ptr: *mut IntCpu) {
     assert!(!ptr.is_null());
     let cpu = &mut *ptr;
@@ -58,6 +65,29 @@ pub unsafe extern "C" fn icpu_add_input(ptr: *mut IntCpu, input: i64) {
 }
 
 #[no_mangle]
+pub unsafe extern "C" fn icpu_mem_write(ptr: *mut IntCpu, addr: i64, value: i64) -> i32 {
+    assert!(!ptr.is_null());
+    let cpu = &mut *ptr;
+    match cpu.tape_write(addr, value) {
+        Err(e) => cause_id(e),
+        Ok(_) => 0,
+    }
+}
+
+#[no_mangle]
+pub unsafe extern "C" fn icpu_mem_read(ptr: *const IntCpu, addr: i64, value: *mut i64) -> i32 {
+    assert!(!ptr.is_null());
+    let cpu = &*ptr;
+    match cpu.tape_read(addr) {
+        Err(e) => cause_id(e),
+        Ok(v) => {
+            *value = v;
+            0
+        }
+    }
+}
+
+#[no_mangle]
 pub unsafe extern "C" fn icpu_dump(ptr: *const IntCpu) {
     assert!(!ptr.is_null());
     let cpu = &*ptr;
@@ -73,6 +103,24 @@ pub unsafe extern "C" fn icpu_step(ptr: *mut IntCpu) -> i32 {
         return 0;
     }
     cause_id(cpu_ref.cause().unwrap())
+}
+
+#[no_mangle]
+pub unsafe extern "C" fn icpu_run(ptr: *mut IntCpu) -> i32 {
+    assert!(!ptr.is_null());
+    let cpu = &mut *ptr;
+    while !cpu.step() {}
+    match cpu.cause() {
+        Some(e) => cause_id(e),
+        _ => 0,
+    }
+}
+
+#[no_mangle]
+pub unsafe extern "C" fn icpu_resume(ptr: *mut IntCpu) {
+    assert!(!ptr.is_null());
+    let cpu = &mut *ptr;
+    cpu.resume();
 }
 
 #[no_mangle]

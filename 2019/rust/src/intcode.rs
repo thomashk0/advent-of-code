@@ -129,7 +129,7 @@ pub fn parse_prog(data: &str) -> Result<Vec<i64>, ParseIntError> {
 
 type CpuWord = i64;
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub struct IntCpu {
     tape: Vec<CpuWord>,
     memory: HashMap<CpuWord, CpuWord>,
@@ -209,14 +209,14 @@ impl IntCpu {
         self.output.len()
     }
 
-    fn tape_read(&self, idx: CpuWord) -> Result<CpuWord, HaltCause> {
+    pub fn tape_read(&self, idx: CpuWord) -> Result<CpuWord, HaltCause> {
         match self.access(idx)? {
             Some(offset) => Ok(self.tape[offset]),
             None => Ok(*self.memory.get(&idx).unwrap_or(&(0 as CpuWord))),
         }
     }
 
-    fn tape_write(&mut self, idx: CpuWord, value: CpuWord) -> Result<(), HaltCause> {
+    pub fn tape_write(&mut self, idx: CpuWord, value: CpuWord) -> Result<(), HaltCause> {
         match self.access(idx)? {
             Some(offset) => {
                 self.tape[offset] = value;
