@@ -1,4 +1,4 @@
-use std::collections::{HashMap, VecDeque};
+use std::collections::{HashMap, HashSet, VecDeque};
 use std::fs::File;
 use std::io;
 use std::io::Read;
@@ -139,6 +139,8 @@ pub struct IntCpu {
     relative_base: CpuWord,
     halt_cause: Option<HaltCause>,
     cycle: u64,
+    cfg: HashMap<(i64, i64), (i64, u64)>,
+    invert_branch: HashSet<i64>
 }
 
 fn from_bool(b: bool) -> CpuWord {
@@ -160,6 +162,8 @@ impl IntCpu {
             pc: 0,
             halt_cause: None,
             cycle: 0,
+            cfg: HashMap::with_capacity(1024),
+            invert_branch: HashSet::with_capacity(512)
         }
     }
 
@@ -244,6 +248,10 @@ impl IntCpu {
         }
     }
 
+    pub fn invert_branch(&mut self, dst: i64) {
+        self.invert_branch.insert(dst);
+    }
+
     fn _step(&mut self) -> Result<(), HaltCause> {
         self.cycle += 1;
 
@@ -252,7 +260,8 @@ impl IntCpu {
         }
         let pc = self.pc as usize;
         let (pc_step, op) = Op::decode(&self.tape[pc..])?;
-        let mut pc_next = self.pc + pc_step as CpuWord;
+        let pc_next = self.pc + pc_step as CpuWord;
+        let mut pc_branch : Option<i64> = None;
         match op {
             Op::Add(x, y, o) => {
                 self.write(o, self.query(x)? + self.query(y)?)?;
@@ -267,13 +276,18 @@ impl IntCpu {
             Op::Output(x) => self.output.push_front(self.query(x)?),
             Op::Bnz(x, off) => {
                 if self.query(x)? != 0 {
-                    pc_next = self.query(off)?;
+                    pc_branch = Some(self.query(off)?);
                 }
+                let (w, _) = self.cfg.get(&(pc as i64, pc_next)).cloned().unwrap_or((0, 0));
+                self.cfg.insert((pc as i64, pc_next), (w + 1, self.cycle));
             }
             Op::Bez(x, off) => {
                 if self.query(x)? == 0 {
-                    pc_next = self.query(off)?;
+                    pc_branch = Some(self.query(off)?);
+                    // println!("b: {:4} -> {:4}", pc, pc_next);
                 }
+                let (w, _) = self.cfg.get(&(pc as i64, pc_next)).cloned().unwrap_or((0, 0));
+                self.cfg.insert((pc as i64, pc_next), (w + 1, self.cycle));
             }
             Op::Slt(x, y, o) => {
                 self.write(o, from_bool(self.query(x)? < self.query(y)?))?;
@@ -289,8 +303,8 @@ impl IntCpu {
                 return Err(HaltCause::Exit);
             }
         }
-        self.pc = pc_next;
 
+        self.pc = pc_branch.unwrap_or(pc_next);
         Ok(())
     }
 
@@ -330,6 +344,10 @@ impl IntCpu {
         eprintln!("cycle: {}", self.cycle);
         eprintln!("pc:    {}", self.pc);
         eprintln!("err:   {:?}", self.halt_cause);
+        for ((p, q), c) in &self.cfg {
+            // eprintln!("{:4} -> {:4} (x{:<4}, {})", p, q, c.0, c.1);
+            eprintln!("{},{},{},{}", p, q, c.0, c.1);
+        }
     }
 }
 

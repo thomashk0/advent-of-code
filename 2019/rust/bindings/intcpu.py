@@ -1,7 +1,7 @@
 import ctypes
 from ctypes import POINTER
 
-ICPU_LIB = ctypes.cdll.LoadLibrary('./target/debug/libaoc_bindings.so')
+ICPU_LIB = ctypes.cdll.LoadLibrary('./target/release/libaoc_bindings.so')
 
 
 class IntCpuS(ctypes.Structure):
@@ -52,6 +52,9 @@ class IntCpu:
     def add_input(self, input):
         self.lib.icpu_add_input(self._handle, ctypes.c_int64(input))
 
+    def invert_branch(self, addr):
+        self.lib.icpu_invert_branch(self._handle, ctypes.c_int64(addr))
+
     def pending_output(self):
         return self.lib.icpu_pending_output(self._handle)
 
@@ -87,12 +90,7 @@ def main():
     c.write(1, 12)
     c.write(2, 2)
     c.run()
-    # while True:
-    #     if c.step() != 0:
-    #         print("Simulation stopped")
-    # break
     print(c.read(0))
-    # c.dump()
 
 
 if __name__ == "__main__":

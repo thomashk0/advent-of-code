@@ -65,6 +65,13 @@ pub unsafe extern "C" fn icpu_add_input(ptr: *mut IntCpu, input: i64) {
 }
 
 #[no_mangle]
+pub unsafe extern "C" fn icpu_invert_branch(ptr: *mut IntCpu, input: i64) {
+    assert!(!ptr.is_null());
+    let cpu = &mut *ptr;
+    cpu.invert_branch(input);
+}
+
+#[no_mangle]
 pub unsafe extern "C" fn icpu_mem_write(ptr: *mut IntCpu, addr: i64, value: i64) -> i32 {
     assert!(!ptr.is_null());
     let cpu = &mut *ptr;
