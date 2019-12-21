@@ -1,5 +1,5 @@
 extern crate aoc;
-use aoc::{day11, day13, day2, day5, day7, day9, intcode};
+use aoc::{day11, day13, day2, day5, day7, day9, disasm};
 use std::{env, process};
 
 pub fn usage(prog_name: &str) {
@@ -35,7 +35,7 @@ pub fn main() {
         "13" => day13::day13(&args[2]).unwrap_or_else(|e| {
             eprintln!("error: {:?}", e);
         }),
-        "disasm" => intcode::disasm(&args[2]).unwrap_or_else(|e| {
+        "disasm" => disasm::disasm(&args[2]).unwrap_or_else(|e| {
             eprintln!("error: {:?}", e);
         }),
         _ => {

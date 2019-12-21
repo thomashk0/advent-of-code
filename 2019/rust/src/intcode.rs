@@ -66,6 +66,10 @@ pub enum Op {
     SetRelative(Operand),
     Halt,
     Raw(i64),
+    Nop(),
+    LoadImm(Operand, i64),
+    Copy(Operand, Operand),
+    Goto(Operand),
 }
 
 impl Op {
@@ -107,6 +111,20 @@ impl Op {
             Op::Input(o) => Some(*o),
             Op::Slt(o, _, _) => Some(*o),
             Op::Seq(o, _, _) => Some(*o),
+            _ => None,
+        }
+    }
+
+    pub fn get_operand(&self, idx: usize) -> Option<Operand> {
+        match self.clone() {
+            Op::Add(_, x, y) => [x, y].get(idx).cloned(),
+            Op::Mul(_, x, y) => [x, y].get(idx).cloned(),
+            Op::Output(x) => [x].get(idx).cloned(),
+            Op::Bnz(x, y) => [x, y].get(idx).cloned(),
+            Op::Bez(x, y) => [x, y].get(idx).cloned(),
+            Op::Slt(_, x, y) => [x, y].get(idx).cloned(),
+            Op::Seq(_, x, y) => [x, y].get(idx).cloned(),
+            Op::SetRelative(x) => [x].get(idx).cloned(),
             _ => None,
         }
     }
@@ -282,8 +300,11 @@ impl IntCpu {
             Op::Halt => {
                 return Err(HaltCause::Exit);
             }
-            Op::Raw(_) => {
-                unreachable!("Raw values are not supposed to exists in executable programs");
+            op => {
+                unreachable!(
+                    "Instructions of type {:?} are not supposed to exists in executable programs",
+                    op
+                );
             }
         }
 
@@ -353,12 +374,6 @@ pub fn dump_output(cpu: &mut IntCpu) {
         }
     }
     println!();
-}
-
-pub fn disasm(input: &str) -> io::Result<()> {
-    let tape = load_tape(input)?;
-    // disassemble(&tape);
-    Ok(())
 }
 
 #[cfg(test)]
