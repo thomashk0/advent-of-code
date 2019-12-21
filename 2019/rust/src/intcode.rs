@@ -1,3 +1,4 @@
+use std::cmp;
 use std::collections::{HashMap, HashSet, VecDeque};
 use std::fs::File;
 use std::io;
@@ -64,6 +65,7 @@ pub enum Op {
     Seq(Operand, Operand, Operand),
     SetRelative(Operand),
     Halt,
+    Raw(i64),
 }
 
 impl Op {
@@ -97,67 +99,23 @@ impl Op {
             _ => Err(DecodeError::UnknownOpcode),
         }
     }
-}
 
-pub fn pp_operand(x: &Operand) -> String {
-    match x {
-        Operand::Position(p) => format!("mem[{}]", p),
-        Operand::Imm(i) => format!("{}", i),
-        Operand::Relative(o) => format!("sp + {}", o),
-    }
-}
-
-pub fn pp_op(op: &Op) -> String {
-    match op {
-        Op::Add(x, y, o) => format!(
-            "{:10} <- {:5} + {:5}",
-            pp_operand(o),
-            pp_operand(x),
-            pp_operand(y)
-        ),
-        Op::Mul(x, y, o) => format!(
-            "{:10} <- {:5} * {:5}",
-            pp_operand(o),
-            pp_operand(x),
-            pp_operand(y)
-        ),
-        Op::Input(o) => format!("{:10} <- read", pp_operand(o)),
-        Op::Output(s) => format!("write {}", pp_operand(s)),
-        Op::Bnz(x, off) => format!("bnz {}, {}", pp_operand(x), pp_operand(off)),
-        Op::Bez(x, off) => format!("bez {}, {}", pp_operand(x), pp_operand(off)),
-        Op::Slt(x, y, o) => format!(
-            "{:10} <- {:5} < {:5}",
-            pp_operand(o),
-            pp_operand(x),
-            pp_operand(y)
-        ),
-        Op::Seq(x, y, o) => format!(
-            "{:10} <- {:5} == {:5}",
-            pp_operand(o),
-            pp_operand(x),
-            pp_operand(y)
-        ),
-        Op::SetRelative(off) => format!("{:10} <- sp + {}", "sp", pp_operand(off)),
-        Op::Halt => format!("halt"),
-    }
-}
-
-pub fn disassemble(tape: &[i64]) {
-    let mut pc = 0;
-    loop {
-        match Op::decode(&tape[pc..]) {
-            Ok((inc, op)) => {
-                println!("{:3}: {}", pc, pp_op(&op)); // &tape[pc..(pc + inc)]
-                pc += inc;
-            }
-            Err(e) => {
-                println!("{:3}: {} ({:?}) ", pc, tape[pc], e);
-                pc += 1;
-                // break;
-            }
+    pub fn get_output_operand(&self) -> Option<Operand> {
+        match self {
+            Op::Add(o, _, _) => Some(*o),
+            Op::Mul(o, _, _) => Some(*o),
+            Op::Input(o) => Some(*o),
+            Op::Slt(o, _, _) => Some(*o),
+            Op::Seq(o, _, _) => Some(*o),
+            _ => None,
         }
-        if pc >= tape.len() {
-            break;
+    }
+
+    pub fn is_branch(&self) -> bool {
+        match self {
+            Op::Bnz(_, _) => true,
+            Op::Bez(_, _) => true,
+            _ => false,
         }
     }
 }
@@ -172,6 +130,7 @@ type CpuWord = i64;
 
 #[derive(Debug, Clone)]
 pub struct IntCpu {
+    original_tape: Vec<i64>,
     tape: Vec<CpuWord>,
     memory: HashMap<CpuWord, CpuWord>,
     input: VecDeque<CpuWord>,
@@ -180,8 +139,6 @@ pub struct IntCpu {
     relative_base: CpuWord,
     halt_cause: Option<HaltCause>,
     cycle: u64,
-    cfg: HashMap<(i64, i64), (i64, u64)>,
-    invert_branch: HashSet<i64>,
 }
 
 fn from_bool(b: bool) -> CpuWord {
@@ -193,39 +150,31 @@ fn from_bool(b: bool) -> CpuWord {
 }
 
 impl IntCpu {
-    pub fn new() -> Self {
+    pub fn from_tape(tape: &[i64]) -> Self {
         IntCpu {
-            tape: Vec::with_capacity(1024),
-            memory: HashMap::with_capacity(1024),
-            input: VecDeque::with_capacity(128),
-            output: VecDeque::with_capacity(128),
-            relative_base: 0,
+            original_tape: tape.iter().cloned().collect(),
+            tape: tape.iter().map(|x| CpuWord::from(*x)).collect(),
+            memory: HashMap::with_capacity(cmp::max(32, tape.len())),
+            input: VecDeque::with_capacity(16),
+            output: VecDeque::with_capacity(16),
             pc: 0,
+            relative_base: 0,
             halt_cause: None,
             cycle: 0,
-            cfg: HashMap::with_capacity(1024),
-            invert_branch: HashSet::with_capacity(512),
         }
     }
 
-    pub fn reset(&mut self) {
-        self.pc = 0;
-        self.halt_cause = None;
-        self.cycle = 0;
-        self.relative_base = 0;
-        self.memory.clear();
-        self.input.clear();
-        self.output.clear();
-    }
-
-    pub fn load(&mut self, tape: &[i64]) {
-        self.tape = tape.iter().map(|x| CpuWord::from(*x)).collect();
-    }
-
-    pub fn load_str(&mut self, tape: &str) -> Result<(), ParseIntError> {
+    pub fn from_str(tape: &str) -> Result<Self, ParseIntError> {
         let v = parse_prog(tape)?;
-        self.load(&v);
-        Ok(())
+        Ok(IntCpu::from_tape(&v[..]))
+    }
+
+    pub fn reset(&mut self) {
+        *self = IntCpu::from_tape(&self.original_tape[..]);
+    }
+
+    pub fn reset_tape(&mut self, tape: &[i64]) {
+        *self = IntCpu::from_tape(&tape);
     }
 
     pub fn halted(&self) -> bool {
@@ -289,10 +238,6 @@ impl IntCpu {
         }
     }
 
-    pub fn invert_branch(&mut self, dst: i64) {
-        self.invert_branch.insert(dst);
-    }
-
     fn _step(&mut self) -> Result<(), HaltCause> {
         self.cycle += 1;
 
@@ -319,24 +264,11 @@ impl IntCpu {
                 if self.query(x)? != 0 {
                     pc_branch = Some(self.query(off)?);
                 }
-                let (w, _) = self
-                    .cfg
-                    .get(&(pc as i64, pc_next))
-                    .cloned()
-                    .unwrap_or((0, 0));
-                self.cfg.insert((pc as i64, pc_next), (w + 1, self.cycle));
             }
             Op::Bez(x, off) => {
                 if self.query(x)? == 0 {
                     pc_branch = Some(self.query(off)?);
-                    // println!("b: {:4} -> {:4}", pc, pc_next);
                 }
-                let (w, _) = self
-                    .cfg
-                    .get(&(pc as i64, pc_next))
-                    .cloned()
-                    .unwrap_or((0, 0));
-                self.cfg.insert((pc as i64, pc_next), (w + 1, self.cycle));
             }
             Op::Slt(x, y, o) => {
                 self.write(o, from_bool(self.query(x)? < self.query(y)?))?;
@@ -347,9 +279,11 @@ impl IntCpu {
             Op::SetRelative(off) => {
                 self.relative_base += self.query(off)?;
             }
-
             Op::Halt => {
                 return Err(HaltCause::Exit);
+            }
+            Op::Raw(_) => {
+                unreachable!("Raw values are not supposed to exists in executable programs");
             }
         }
 
@@ -393,10 +327,6 @@ impl IntCpu {
         eprintln!("cycle: {}", self.cycle);
         eprintln!("pc:    {}", self.pc);
         eprintln!("err:   {:?}", self.halt_cause);
-        for ((p, q), c) in &self.cfg {
-            // eprintln!("{:4} -> {:4} (x{:<4}, {})", p, q, c.0, c.1);
-            eprintln!("{},{},{},{}", p, q, c.0, c.1);
-        }
     }
 }
 
@@ -425,6 +355,12 @@ pub fn dump_output(cpu: &mut IntCpu) {
     println!();
 }
 
+pub fn disasm(input: &str) -> io::Result<()> {
+    let tape = load_tape(input)?;
+    // disassemble(&tape);
+    Ok(())
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -441,20 +377,8 @@ mod tests {
             .iter()
             .zip([2i64, 2, 30].iter())
         {
-            let mut cpu = IntCpu::new();
-            cpu.load_str(v).unwrap();
+            let mut cpu = IntCpu::from_str(v).unwrap();
             assert_eq!(cpu.run(), Some(r));
         }
     }
-
-    //    #[test]
-    //    fn decoding() {
-    //        let opcode = Opcode::decode(1002);
-    //        assert_eq!(opcode.code, 2);
-    //        assert_eq!(opcode.param_mode_0, 0);
-    //        assert_eq!(opcode.param_mode_1, 1);
-    //        assert_eq!(opcode.param_mode_2, 0);
-    //        assert!(Opcode::decode(99).check().is_ok());
-    //        assert!(Opcode::decode(0).check().is_err());
-    //    }
 }

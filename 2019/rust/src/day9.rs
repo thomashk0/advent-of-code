@@ -14,14 +14,12 @@ fn run_or_die(cpu: &mut IntCpu) {
 
 pub fn day9(input: &str) -> io::Result<()> {
     let tape = load_tape(input)?;
-    let mut cpu = IntCpu::new();
-    cpu.load(&tape);
+    let mut cpu = IntCpu::from_tape(&tape[..]);
     cpu.add_input(1);
     run_or_die(&mut cpu);
     println!("part 1: {}", cpu.pop_output().unwrap());
 
     cpu.reset();
-    cpu.load(&tape);
     cpu.add_input(2);
     run_or_die(&mut cpu);
     println!("part 2: {}", cpu.pop_output().unwrap());

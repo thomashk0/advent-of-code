@@ -21,9 +21,9 @@ def parse_tape(s):
     return list(map(int, s.split(',')))
 
 
-def disassemble(tape):
-    p = to_i64_array(tape)
-    ICPU_LIB.icpu_disassemble(p, ctypes.c_size_t(len(p)))
+# def disassemble(tape):
+#     p = to_i64_array(tape)
+#     ICPU_LIB.icpu_disassemble(p, ctypes.c_size_t(len(p)))
 
 
 class IntCpu:
@@ -91,13 +91,15 @@ class IntCpu:
 
 
 def main():
-    c = IntCpu()
-    src = parse_tape(open('../assets/day2-input').readline().strip())
-    c.load(src)
-    c.write(1, 12)
-    c.write(2, 2)
-    c.run()
-    print(c.read(0))
+    src = parse_tape(open('../assets/day21-input').readline().strip())
+    disassemble(src)
+    # c = IntCpu()
+    # src = parse_tape(open('../assets/day2-input').readline().strip())
+    # c.load(src)
+    # c.write(1, 12)
+    # c.write(2, 2)
+    # c.run()
+    # print(c.read(0))
 
 
 if __name__ == "__main__":

@@ -1,5 +1,4 @@
 use aoc::intcode::{HaltCause, IntCpu};
-use aoc::intcode;
 use std::slice;
 
 fn cause_id(cause: HaltCause) -> i32 {
@@ -14,7 +13,7 @@ fn cause_id(cause: HaltCause) -> i32 {
 
 #[no_mangle]
 pub extern "C" fn icpu_create() -> *mut IntCpu {
-    let cpu = IntCpu::new();
+    let cpu = IntCpu::from_tape(&[]);
     Box::into_raw(Box::new(cpu))
 }
 
@@ -37,13 +36,7 @@ pub unsafe extern "C" fn icpu_load_tape(ptr: *mut IntCpu, data: *const i64, len:
     let tape = slice::from_raw_parts(data, len);
     assert!(!ptr.is_null());
     let cpu = &mut *ptr;
-    cpu.load(tape);
-}
-
-#[no_mangle]
-pub unsafe extern "C" fn icpu_disassemble(data: *const i64, len: usize) {
-    let tape = slice::from_raw_parts(data, len);
-    intcode::disassemble(&tape);
+    cpu.reset_tape(tape);
 }
 
 #[no_mangle]
@@ -69,13 +62,6 @@ pub unsafe extern "C" fn icpu_add_input(ptr: *mut IntCpu, input: i64) {
     assert!(!ptr.is_null());
     let cpu = &mut *ptr;
     cpu.add_input(input);
-}
-
-#[no_mangle]
-pub unsafe extern "C" fn icpu_invert_branch(ptr: *mut IntCpu, input: i64) {
-    assert!(!ptr.is_null());
-    let cpu = &mut *ptr;
-    cpu.invert_branch(input);
 }
 
 #[no_mangle]

@@ -7,11 +7,9 @@ pub fn day2(input: &str) -> io::Result<()> {
     let mut f = File::open(input)?;
     let mut tape_str = String::new();
     f.read_to_string(&mut tape_str)?;
-    let mut cpu = intcode::IntCpu::new();
-    let mut tape = intcode::parse_prog(tape_str.trim()).unwrap();
-    tape[1] = 12;
-    tape[2] = 2;
-    cpu.load(&tape);
+    let mut cpu = intcode::IntCpu::from_str(tape_str.trim()).unwrap();
+    cpu.tape_write(1, 12).unwrap();
+    cpu.tape_write(2, 2).unwrap();
 
     println!(
         "part 1: {}",
@@ -23,10 +21,9 @@ pub fn day2(input: &str) -> io::Result<()> {
 
     for verb in 0..100 {
         for noun in 0..100 {
-            tape[1] = verb;
-            tape[2] = noun;
             cpu.reset();
-            cpu.load(&tape);
+            cpu.tape_write(1, verb).unwrap();
+            cpu.tape_write(2, noun).unwrap();
             if cpu.run().unwrap() == 19690720 {
                 println!("part 2: {}", 100 * verb + noun)
             }

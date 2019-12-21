@@ -2,8 +2,7 @@ use crate::intcode::{dump_output, load_tape, IntCpu};
 use std::io;
 
 fn run_with_id(tape: &[i64], id: i64) -> IntCpu {
-    let mut cpu = IntCpu::new();
-    cpu.load(tape);
+    let mut cpu = IntCpu::from_tape(tape);
     cpu.add_input(id);
     match cpu.run() {
         None => {

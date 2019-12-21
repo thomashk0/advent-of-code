@@ -25,23 +25,22 @@ fn run_stage(cpu: &mut Cpu) -> Option<i64> {
 }
 
 impl Amp {
-    pub fn new() -> Self {
+    pub fn new(tape: &[i64]) -> Self {
         Self {
-            stages: [Cpu::new(), Cpu::new(), Cpu::new(), Cpu::new(), Cpu::new()],
+            stages: [
+                Cpu::from_tape(&tape),
+                Cpu::from_tape(&tape),
+                Cpu::from_tape(&tape),
+                Cpu::from_tape(&tape),
+                Cpu::from_tape(&tape),
+            ],
             input: VecDeque::with_capacity(128),
         }
     }
 
-    fn reset_tape(&mut self, tape: &Vec<i64>) {
-        for cpu in self.stages.iter_mut() {
-            cpu.reset();
-            cpu.load(&tape);
-        }
-    }
-
-    pub fn reset_phase(&mut self, tape: &Vec<i64>, phase: &[i64; 5]) {
-        self.reset_tape(tape);
+    pub fn reset_phase(&mut self, phase: &[i64; 5]) {
         for (cpu, phase) in self.stages.iter_mut().zip(phase.iter()) {
+            cpu.reset();
             cpu.add_input(*phase);
         }
     }
@@ -72,13 +71,13 @@ impl Amp {
 
 pub fn day7(input: &str) -> io::Result<()> {
     let tape = load_tape(input)?;
-    let mut amp = Amp::new();
+    let mut amp = Amp::new(&tape[..]);
 
     {
         let perms = (0i64..=4).permutations(5);
         let part_1 = perms
             .map(|p| {
-                amp.reset_phase(&tape, p.as_slice().try_into().unwrap());
+                amp.reset_phase(p.as_slice().try_into().unwrap());
                 amp.run(0).unwrap()
             })
             .max()
@@ -90,7 +89,7 @@ pub fn day7(input: &str) -> io::Result<()> {
         let perms = (5i64..=9).permutations(5);
         let part_2 = perms
             .map(|p| {
-                amp.reset_phase(&tape, p.as_slice().try_into().unwrap());
+                amp.reset_phase(p.as_slice().try_into().unwrap());
                 amp.run_loop()
             })
             .max()

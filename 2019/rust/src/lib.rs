@@ -1,3 +1,4 @@
+pub mod disasm;
 pub mod intcode;
 
 pub mod day2;

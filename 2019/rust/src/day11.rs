@@ -45,9 +45,9 @@ struct Robot {
 }
 
 impl Robot {
-    pub fn new() -> Self {
+    pub fn new(tape: &[i64]) -> Self {
         Robot {
-            brain: IntCpu::new(),
+            brain: IntCpu::from_tape(&tape),
             loc: (0, 0),
             dir: (0, 1),
         }
@@ -95,8 +95,8 @@ impl Robot {
 }
 
 fn part_1(tape: &Vec<i64>) {
-    let mut robot = Robot::new();
-    robot.brain.load(&tape);
+    let mut robot = Robot::new(&tape);
+
     let mut world: HashMap<Vec2, i8> = HashMap::with_capacity(1024);
     robot.run(&mut world).unwrap_or_else(|e| {
         eprintln!("error: simulation failed ==> ({:?})", e);
@@ -106,8 +106,7 @@ fn part_1(tape: &Vec<i64>) {
 }
 
 fn part_2(tape: &Vec<i64>) {
-    let mut robot = Robot::new();
-    robot.brain.load(&tape);
+    let mut robot = Robot::new(&tape);
     let mut world: HashMap<Vec2, i8> = HashMap::with_capacity(1024);
     world.insert((0, 0), 1);
     robot.run(&mut world).unwrap_or_else(|e| {

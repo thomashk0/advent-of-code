@@ -58,9 +58,9 @@ struct Arcade {
 }
 
 impl Arcade {
-    pub fn new(inputs: &[i8]) -> Self {
+    pub fn new(tape: &[i64], inputs: &[i8]) -> Self {
         Arcade {
-            cpu: IntCpu::new(),
+            cpu: IntCpu::from_tape(&tape),
             score: 0,
             inputs: inputs.iter().rev().cloned().collect(),
             move_history: Vec::with_capacity(2048),
@@ -127,8 +127,7 @@ impl Arcade {
 
 pub fn part_1(tape: &Vec<i64>) {
     let mut world: World = HashMap::with_capacity(1024);
-    let mut arcade = Arcade::new(&[]);
-    arcade.cpu.load(&tape);
+    let mut arcade = Arcade::new(&tape, &[]);
     arcade.run(&mut world).unwrap_or_else(|e| {
         eprintln!("simulation failed => {:?}", e);
         arcade.cpu.dump();
@@ -156,10 +155,8 @@ fn load_history(path: &str) -> Vec<i8> {
 pub fn part_2(tape: &Vec<i64>) {
     let history = load_history("history.txt");
     let mut world: World = HashMap::with_capacity(1024);
-    let mut arcade = Arcade::new(&history[..]);
-    let mut tape = tape.clone();
-    tape[0] = 2;
-    arcade.cpu.load(&tape);
+    let mut arcade = Arcade::new(&tape, &history[..]);
+    arcade.cpu.tape_write(0, 2).unwrap();
     arcade.run(&mut world).unwrap_or_else(|e| {
         eprintln!("simulation failed => {:?}", e);
         arcade.cpu.dump();
