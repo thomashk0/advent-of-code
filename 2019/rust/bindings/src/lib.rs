@@ -1,4 +1,5 @@
 use aoc::intcode::{HaltCause, IntCpu};
+use aoc::intcode;
 use std::slice;
 
 fn cause_id(cause: HaltCause) -> i32 {
@@ -37,6 +38,12 @@ pub unsafe extern "C" fn icpu_load_tape(ptr: *mut IntCpu, data: *const i64, len:
     assert!(!ptr.is_null());
     let cpu = &mut *ptr;
     cpu.load(tape);
+}
+
+#[no_mangle]
+pub unsafe extern "C" fn icpu_disassemble(data: *const i64, len: usize) {
+    let tape = slice::from_raw_parts(data, len);
+    intcode::disassemble(&tape);
 }
 
 #[no_mangle]

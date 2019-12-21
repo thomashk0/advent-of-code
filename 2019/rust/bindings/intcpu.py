@@ -21,9 +21,15 @@ def parse_tape(s):
     return list(map(int, s.split(',')))
 
 
+def disassemble(tape):
+    p = to_i64_array(tape)
+    ICPU_LIB.icpu_disassemble(p, ctypes.c_size_t(len(p)))
+
+
 class IntCpu:
     def __init__(self, lib=ICPU_LIB, other=None):
         self.lib = lib
+        self.tape = []
         if other:
             self._handle = self.lib.icpu_clone(other._handle)
         else:
@@ -38,6 +44,7 @@ class IntCpu:
 
     def load(self, tape):
         p = to_i64_array(tape)
+        self.tape = p
         self.lib.icpu_load_tape(self._handle, p, ctypes.c_size_t(len(p)))
 
     def resume(self):

@@ -13,7 +13,7 @@ pub enum HaltCause {
     NoMoreInput,
 }
 
-impl From<DecodeError> for HaltCause where {
+impl From<DecodeError> for HaltCause {
     fn from(e: DecodeError) -> Self {
         HaltCause::DecodeError(e)
     }
@@ -99,20 +99,61 @@ impl Op {
     }
 }
 
+pub fn pp_operand(x: &Operand) -> String {
+    match x {
+        Operand::Position(p) => format!("mem[{}]", p),
+        Operand::Imm(i) => format!("{}", i),
+        Operand::Relative(o) => format!("sp + {}", o),
+    }
+}
+
+pub fn pp_op(op: &Op) -> String {
+    match op {
+        Op::Add(x, y, o) => format!(
+            "{:10} <- {:5} + {:5}",
+            pp_operand(o),
+            pp_operand(x),
+            pp_operand(y)
+        ),
+        Op::Mul(x, y, o) => format!(
+            "{:10} <- {:5} * {:5}",
+            pp_operand(o),
+            pp_operand(x),
+            pp_operand(y)
+        ),
+        Op::Input(o) => format!("{:10} <- read", pp_operand(o)),
+        Op::Output(s) => format!("write {}", pp_operand(s)),
+        Op::Bnz(x, off) => format!("bnz {}, {}", pp_operand(x), pp_operand(off)),
+        Op::Bez(x, off) => format!("bez {}, {}", pp_operand(x), pp_operand(off)),
+        Op::Slt(x, y, o) => format!(
+            "{:10} <- {:5} < {:5}",
+            pp_operand(o),
+            pp_operand(x),
+            pp_operand(y)
+        ),
+        Op::Seq(x, y, o) => format!(
+            "{:10} <- {:5} == {:5}",
+            pp_operand(o),
+            pp_operand(x),
+            pp_operand(y)
+        ),
+        Op::SetRelative(off) => format!("{:10} <- sp + {}", "sp", pp_operand(off)),
+        Op::Halt => format!("halt"),
+    }
+}
+
 pub fn disassemble(tape: &[i64]) {
     let mut pc = 0;
     loop {
         match Op::decode(&tape[pc..]) {
             Ok((inc, op)) => {
-                println!("{:3}: {:?} {:?}\t", pc, &tape[pc..(pc + inc)], op);
+                println!("{:3}: {}", pc, pp_op(&op)); // &tape[pc..(pc + inc)]
                 pc += inc;
             }
             Err(e) => {
-                println!(
-                    "error: disassembling stopped @{} -> {} ({:?}) ",
-                    pc, tape[pc], e
-                );
-                break;
+                println!("{:3}: {} ({:?}) ", pc, tape[pc], e);
+                pc += 1;
+                // break;
             }
         }
         if pc >= tape.len() {
@@ -140,7 +181,7 @@ pub struct IntCpu {
     halt_cause: Option<HaltCause>,
     cycle: u64,
     cfg: HashMap<(i64, i64), (i64, u64)>,
-    invert_branch: HashSet<i64>
+    invert_branch: HashSet<i64>,
 }
 
 fn from_bool(b: bool) -> CpuWord {
@@ -163,7 +204,7 @@ impl IntCpu {
             halt_cause: None,
             cycle: 0,
             cfg: HashMap::with_capacity(1024),
-            invert_branch: HashSet::with_capacity(512)
+            invert_branch: HashSet::with_capacity(512),
         }
     }
 
@@ -261,7 +302,7 @@ impl IntCpu {
         let pc = self.pc as usize;
         let (pc_step, op) = Op::decode(&self.tape[pc..])?;
         let pc_next = self.pc + pc_step as CpuWord;
-        let mut pc_branch : Option<i64> = None;
+        let mut pc_branch: Option<i64> = None;
         match op {
             Op::Add(x, y, o) => {
                 self.write(o, self.query(x)? + self.query(y)?)?;
@@ -278,7 +319,11 @@ impl IntCpu {
                 if self.query(x)? != 0 {
                     pc_branch = Some(self.query(off)?);
                 }
-                let (w, _) = self.cfg.get(&(pc as i64, pc_next)).cloned().unwrap_or((0, 0));
+                let (w, _) = self
+                    .cfg
+                    .get(&(pc as i64, pc_next))
+                    .cloned()
+                    .unwrap_or((0, 0));
                 self.cfg.insert((pc as i64, pc_next), (w + 1, self.cycle));
             }
             Op::Bez(x, off) => {
@@ -286,7 +331,11 @@ impl IntCpu {
                     pc_branch = Some(self.query(off)?);
                     // println!("b: {:4} -> {:4}", pc, pc_next);
                 }
-                let (w, _) = self.cfg.get(&(pc as i64, pc_next)).cloned().unwrap_or((0, 0));
+                let (w, _) = self
+                    .cfg
+                    .get(&(pc as i64, pc_next))
+                    .cloned()
+                    .unwrap_or((0, 0));
                 self.cfg.insert((pc as i64, pc_next), (w + 1, self.cycle));
             }
             Op::Slt(x, y, o) => {
