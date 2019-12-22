@@ -1,15 +1,22 @@
 import ctypes
 from ctypes import POINTER
+import pkg_resources
 
-ICPU_LIB = ctypes.cdll.LoadLibrary('./target/release/libaoc_bindings.so')
+lib_intcpu_debug = pkg_resources.resource_filename('intcpu',
+                                                   'libaoc_bindings_debug.so')
+lib_intcpu = pkg_resources.resource_filename('intcpu', 'libaoc_bindings.so')
+
+ICPU_LIB_DEBUG = ctypes.cdll.LoadLibrary(lib_intcpu_debug)
+ICPU_LIB = ctypes.cdll.LoadLibrary(lib_intcpu)
 
 
 class IntCpuS(ctypes.Structure):
     pass
 
 
-ICPU_LIB.icpu_create.restype = POINTER(IntCpuS)
-ICPU_LIB.icpu_clone.restype = POINTER(IntCpuS)
+for lib in [ICPU_LIB, ICPU_LIB_DEBUG]:
+    lib.icpu_create.restype = POINTER(IntCpuS)
+    lib.icpu_clone.restype = POINTER(IntCpuS)
 
 
 def to_i64_array(lst):

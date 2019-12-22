@@ -1,8 +1,5 @@
 # Solutions for the Advent of Code programming puzzles
 
-This repository contains my solutions to the [Advent of Code 2018](https://adventofcode.com/).
-Solutions are provided "as this", not all of them are cleaned-up neither optimized.
-
 # Organisation
 
 Solutions are written in various languages including C++17, Haskell, Python and even Rust!
