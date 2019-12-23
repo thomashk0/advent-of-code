@@ -1,3 +1,4 @@
+import enum
 import ctypes
 from ctypes import POINTER
 import pkg_resources
@@ -28,9 +29,13 @@ def parse_tape(s):
     return list(map(int, s.split(',')))
 
 
-# def disassemble(tape):
-#     p = to_i64_array(tape)
-#     ICPU_LIB.icpu_disassemble(p, ctypes.c_size_t(len(p)))
+class Status(enum.IntEnum):
+    RUNNING = 0
+    HALTED = 1
+    INVALID_PC = 2
+    MEMORY_ERROR = 3
+    DECODE_ERROR = 4
+    NO_MORE_INPUT = 5
 
 
 class IntCpu:
@@ -58,10 +63,10 @@ class IntCpu:
         self.lib.icpu_resume(self._handle)
 
     def step(self):
-        return self.lib.icpu_step(self._handle)
+        return Status(self.lib.icpu_step(self._handle))
 
     def run(self):
-        return self.lib.icpu_run(self._handle)
+        return Status(self.lib.icpu_run(self._handle))
 
     def add_input(self, input):
         self.lib.icpu_add_input(self._handle, ctypes.c_int64(input))
@@ -71,6 +76,9 @@ class IntCpu:
 
     def pending_output(self):
         return self.lib.icpu_pending_output(self._handle)
+
+    def pending_input(self):
+        return self.lib.icpu_pending_input(self._handle)
 
     def pop_output(self):
         dst = (ctypes.c_int64 * 1)(0)

@@ -159,7 +159,7 @@ pub struct IntCpu {
     cycle: u64,
 }
 
-fn from_bool(b: bool) -> CpuWord {
+pub fn from_bool(b: bool) -> CpuWord {
     if b {
         1
     } else {
@@ -219,6 +219,10 @@ impl IntCpu {
 
     pub fn pending_output(&self) -> usize {
         self.output.len()
+    }
+
+    pub fn pending_input(&self) -> usize {
+        self.input.len()
     }
 
     pub fn tape_read(&self, idx: CpuWord) -> Result<CpuWord, HaltCause> {

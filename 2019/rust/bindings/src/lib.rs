@@ -47,6 +47,13 @@ pub unsafe extern "C" fn icpu_pending_output(ptr: *const IntCpu) -> usize {
 }
 
 #[no_mangle]
+pub unsafe extern "C" fn icpu_pending_input(ptr: *const IntCpu) -> usize {
+    assert!(!ptr.is_null());
+    let cpu = &*ptr;
+    cpu.pending_input()
+}
+
+#[no_mangle]
 pub unsafe extern "C" fn icpu_pop_output(ptr: *mut IntCpu, dst: *mut i64) -> bool {
     assert!(!ptr.is_null());
     let cpu = &mut *ptr;
