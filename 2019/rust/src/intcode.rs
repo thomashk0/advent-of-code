@@ -28,11 +28,12 @@ pub enum DecodeError {
     MissingData,
 }
 
-#[derive(Debug, Copy, Clone)]
+#[derive(Debug, Copy, Clone, PartialEq)]
 pub enum Operand {
     Position(CpuWord),
     Imm(CpuWord),
     Relative(CpuWord),
+    Variable(usize),
 }
 
 impl Operand {
@@ -101,31 +102,6 @@ impl Op {
             9 => Ok((2, Op::SetRelative(arg[0]?))),
             99 => Ok((1, Op::Halt)),
             _ => Err(DecodeError::UnknownOpcode),
-        }
-    }
-
-    pub fn get_output_operand(&self) -> Option<Operand> {
-        match self {
-            Op::Add(o, _, _) => Some(*o),
-            Op::Mul(o, _, _) => Some(*o),
-            Op::Input(o) => Some(*o),
-            Op::Slt(o, _, _) => Some(*o),
-            Op::Seq(o, _, _) => Some(*o),
-            _ => None,
-        }
-    }
-
-    pub fn get_operand(&self, idx: usize) -> Option<Operand> {
-        match self.clone() {
-            Op::Add(_, x, y) => [x, y].get(idx).cloned(),
-            Op::Mul(_, x, y) => [x, y].get(idx).cloned(),
-            Op::Output(x) => [x].get(idx).cloned(),
-            Op::Bnz(x, y) => [x, y].get(idx).cloned(),
-            Op::Bez(x, y) => [x, y].get(idx).cloned(),
-            Op::Slt(_, x, y) => [x, y].get(idx).cloned(),
-            Op::Seq(_, x, y) => [x, y].get(idx).cloned(),
-            Op::SetRelative(x) => [x].get(idx).cloned(),
-            _ => None,
         }
     }
 
@@ -249,6 +225,9 @@ impl IntCpu {
             Operand::Position(addr) => self.tape_read(addr),
             Operand::Imm(imm) => Ok(imm),
             Operand::Relative(addr) => self.tape_read(self.relative_base + addr),
+            Operand::Variable(_) => {
+                unreachable!("symbolic variables cannot live in executable programs")
+            }
         }
     }
 
@@ -257,6 +236,9 @@ impl IntCpu {
             Operand::Position(addr) => self.tape_write(addr, value),
             Operand::Imm(_) => Err(HaltCause::DecodeError(DecodeError::BadMode)),
             Operand::Relative(addr) => self.tape_write(self.relative_base + addr, value),
+            Operand::Variable(_) => {
+                unreachable!("symbolic variables cannot live in executable programs")
+            }
         }
     }
 

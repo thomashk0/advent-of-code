@@ -4,3 +4,11 @@ cmake-build-release
 __pycache__
 .stack-work
 venv
+*.lock
+*.so
+
+/2019/rust/bindings/build/
+/2019/rust/bindings/target
+/2019/rust/bindings/dist/
+/2019/rust/target
+*.egg-info
