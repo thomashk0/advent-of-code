@@ -1,3 +1,5 @@
+import copy
+
 import networkx as nx
 
 DIRS_2D = {'L': (-1, 0), 'R': (1, 0), 'N': (0, -1), 'S': (0, 1)}
@@ -59,19 +61,26 @@ def limits(m, dims=2):
 
 class SparseMap:
     def __init__(self, data=None, ignored=None, floor_tiles=None):
-        self.data = {}
+        self.data = data or dict()
         self.ignored = ignored or set()
         self.floor_tile = floor_tiles or {'.'}
 
-        if data:
-            for i, row in enumerate(data):
-                for j, c in enumerate(row):
-                    if c in self.ignored:
-                        continue
-                    self.data[(j, i)] = c
+    def __copy__(self):
+        other = SparseMap(ignored=copy.copy(self.ignored),
+                          floor_tiles=copy.copy(self.floor_tile))
+        other.data = self.data.copy()
+        return other
+
+    def copy(self):
+        return copy.copy(self)
 
     def limits(self):
+        if len(self.data) == 0:
+            return (0, 0), (0, 0)
         return limits(self.data.keys())
+
+    def items(self):
+        return self.data.items()
 
     def __delitem__(self, key):
         del self.data[key]
@@ -82,8 +91,14 @@ class SparseMap:
     def __getitem__(self, item):
         return self.data[item]
 
-    def get(self, default=None):
-        self.data.get(default)
+    def get(self, key, default=None):
+        return self.data.get(key, default)
+
+    def show(self, fill_char=' '):
+        (xmin, xmax), (ymin, ymax) = self.limits()
+        return "\n".join("".join(
+            self.data.get((x, y), fill_char) for x in range(xmin, xmax + 1)) for
+                         y in range(ymin, ymax + 1))
 
     def draw(self, fill_char=' '):
         (xmin, xmax), (ymin, ymax) = limits(self.data.keys())
@@ -93,10 +108,20 @@ class SparseMap:
                         range(xmin, xmax + 1)))
 
     @classmethod
+    def from_list(cls, data, ignored=None):
+        d = {}
+        for i, row in enumerate(data):
+            for j, c in enumerate(row):
+                if c in ignored:
+                    continue
+                d[(j, i)] = c
+        return cls(d, ignored)
+
+    @classmethod
     def from_file(cls, f_name, ignored=None):
         ignored = ignored or {' ', '\n', '\t'}
         with open(f_name) as f:
-            return cls([list(l.rstrip()) for l in f], ignored)
+            return cls.from_list([list(l.rstrip()) for l in f], ignored)
 
 
 if __name__ == '__main__':
