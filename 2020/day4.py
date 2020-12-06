@@ -55,9 +55,6 @@ class Validator:
 
     @staticmethod
     def valid_passport(p) -> bool:
-        invalid_fields = [(k, v) for k, v in p if not Validator.validate(k, v)]
-        if invalid_fields:
-            print("invalid fields:", invalid_fields)
         return all(Validator.validate(k, v) for k, v in p)
 
     validate_byr = validate_range(1920, 2002, n_digits=4)
