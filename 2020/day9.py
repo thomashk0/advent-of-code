@@ -27,8 +27,8 @@ def part_2(lines, target):
                 break
 
 
-def main():
-    lines = list(map(int, open('assets/day9-input')))
+def aoc_run(filename='assets/day9-input'):
+    lines = list(map(int, open(filename)))
     v = part_1(lines)
     print("part 1:", v)
     i, j = part_2(lines, v)
@@ -38,4 +38,4 @@ def main():
 
 
 if __name__ == '__main__':
-    main()
+    aoc_run()

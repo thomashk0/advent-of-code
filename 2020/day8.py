@@ -66,9 +66,8 @@ def solve_part_2(insn, max_cycles=1000):
     pass
 
 
-def main():
-    insn = load_insn(open('assets/day8-input'))
-    # print()
+def aoc_run(filename='assets/day8-input'):
+    insn = load_insn(open(filename))
     part_1 = solve_part_1(insn)
     print("part 1:", part_1[0])
     part_2 = solve_part_2(insn)
@@ -76,4 +75,4 @@ def main():
 
 
 if __name__ == '__main__':
-    main()
+    aoc_run()

@@ -64,7 +64,7 @@ def aoc_run(input_path):
     target, ids = parse_input(open(input_path))
     ids_2 = [(i, x) for i, x in enumerate(ids) if x is not None]
     ids = [x for x in ids if x is not None]
-    print(target, ids)
+    # print(target, ids)
     r = [(x, x - (target % x)) for x in ids]
     x, xm = min(r, key=lambda v: v[1])
     print("part 1:", xm * x)

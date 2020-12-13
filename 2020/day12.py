@@ -93,11 +93,11 @@ def move_part_2(lines, wp):
     return px, py
 
 
-def main():
-    steps = list(parse_input(open('assets/day12-input')))
+def aoc_run(filename='assets/day12-input'):
+    steps = list(parse_input(open(filename)))
     print("part 1:", mdist((0, 0), move_part_1(steps)))
     print("part 2:", mdist((0, 0), move_part_2(steps, (10, -1))))
 
 
 if __name__ == '__main__':
-    main()
+    aoc_run()

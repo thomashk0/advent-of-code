@@ -77,11 +77,11 @@ def occupied_along(state, start, dir):
             return False
 
 
-def main():
-    print("part 1:", solve('assets/day11-input', is_occupied, 4))
-    print("part 2:", solve('assets/day11-input', occupied_along, 5))
+def aoc_run(filename='assets/day11-input'):
+    print("part 1:", solve(filename, is_occupied, 4))
+    print("part 2:", solve(filename, occupied_along, 5))
     return
 
 
 if __name__ == '__main__':
-    main()
+    aoc_run()

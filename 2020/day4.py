@@ -144,8 +144,8 @@ def test_valid_example():
     assert len(valid_passports) == 4
 
 
-def main():
-    passports = collect_passports(open('assets/day4-input'))
+def aoc_run(filename='assets/day4-input'):
+    passports = collect_passports(open(filename))
 
     valid_passports = list(filter(Validator.has_required_fields, passports))
     print("part 1:", len(valid_passports))
@@ -155,4 +155,4 @@ def main():
 
 
 if __name__ == '__main__':
-    main()
+    aoc_run()

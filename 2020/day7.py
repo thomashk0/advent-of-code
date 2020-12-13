@@ -35,11 +35,11 @@ def number_of_subbags(g: nx.DiGraph, n):
     return total
 
 
-def main():
-    g = load_input(open('assets/day7-input'))
+def aoc_run(filename='assets/day7-input'):
+    g = load_input(open(filename))
     print("part 1:", len(nx.ancestors(g, 'shiny gold')))
     print("part 2:", number_of_subbags(g, 'shiny gold') - 1)
 
 
 if __name__ == '__main__':
-    main()
+    aoc_run()

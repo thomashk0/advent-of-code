@@ -35,8 +35,8 @@ def test_decoding():
         assert seat_id(code) == seat
 
 
-def main():
-    lines = list(line.strip() for line in open('assets/day5-input'))
+def aoc_run(filename):
+    lines = list(line.strip() for line in open(filename))
     seats = set(seat_id(code) for code in lines)
     print("part 1:", max(seats))
 
@@ -46,4 +46,4 @@ def main():
 
 
 if __name__ == '__main__':
-    main()
+    aoc_run('assets/day5-input')

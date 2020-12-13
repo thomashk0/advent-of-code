@@ -3,10 +3,10 @@ import re
 LINE_RE = re.compile(r"(\d+)-(\d+) (\w): (\w+)")
 
 
-def main():
+def aoc_run(filename='assets/day2-input'):
     n_good = 0
     spec = []
-    for line in open('assets/day2-input'):
+    for line in open(filename):
         m = LINE_RE.match(line.strip())
         start, end, char, password = m.groups()
         start, end = int(start), int(end)
@@ -27,6 +27,5 @@ def main():
     print("part 2:", n_good)
 
 
-
 if __name__ == '__main__':
-    main()
+    aoc_run()

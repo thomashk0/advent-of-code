@@ -1,8 +1,8 @@
 import itertools
 
 
-def main():
-    lines = list(map(int, open('assets/day1-input')))
+def aoc_run(filename='assets/day1-input'):
+    lines = list(map(int, open(filename)))
     for i, k in itertools.product(lines, lines):
         if i + k == 2020:
             print("part 1:", i * k)
@@ -15,4 +15,4 @@ def main():
 
 
 if __name__ == '__main__':
-    main()
+    aoc_run()

@@ -16,8 +16,8 @@ def num_arragements(jolts):
     return res[0]
 
 
-def main():
-    jolts = list(map(int, open('assets/day10-input')))
+def aoc_run(filename='assets/day10-input'):
+    jolts = list(map(int, open(filename)))
     built_in = max(jolts) + 3
     jolts.append(0)
     jolts.append(built_in)
@@ -32,4 +32,4 @@ def main():
 
 
 if __name__ == '__main__':
-    main()
+    aoc_run()

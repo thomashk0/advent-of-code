@@ -27,8 +27,8 @@ def awnsered(group):
         return inter
 
 
-def main():
-    questions = parse_questions(open('assets/day6-input'))
+def aoc_run(filename='assets/day6-input'):
+    questions = parse_questions(open(filename))
     part_1 = sum(len(all_questions(group)) for group in questions)
     print("part 1:", part_1)
 
@@ -37,4 +37,4 @@ def main():
 
 
 if __name__ == '__main__':
-    main()
+    aoc_run()

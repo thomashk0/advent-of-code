@@ -26,8 +26,8 @@ def count_trees(m, start, dir):
     return n_trees
 
 
-def main():
-    m = load_map(open('assets/day3-input'))
+def aoc_run(filename='assets/day3-input'):
+    m = load_map(open(filename))
     # print(m.shape, m)
     n_trees = count_trees(m, vec2(0, 0), vec2(3, 1))
     print("part 1:", n_trees)
@@ -40,4 +40,4 @@ def main():
 
 
 if __name__ == '__main__':
-    main()
+    aoc_run()
