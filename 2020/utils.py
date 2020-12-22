@@ -20,3 +20,10 @@ def parse(lines):
             if char != '.':
                 active.add((col_num, line_num, 0, 0))
     return active
+
+
+def prod(xs):
+    acc = 1
+    for x in xs:
+        acc *= x
+    return acc
