@@ -1,3 +1,4 @@
+import collections
 import copy
 import re
 import numpy as np
@@ -28,10 +29,10 @@ def in_range(p, w):
 
 def adjacent(p):
     px, py = p
-    yield px + 1, py
-    yield px - 1, py
-    yield px, py + 1
     yield px, py - 1
+    yield px, py + 1
+    yield px - 1, py
+    yield px + 1, py
 
 
 def diff(pa, pb):
@@ -86,6 +87,10 @@ def tile_borders(tile):
     return tile[0], tile[-1], tile[:, 0], tile[:, -1]
 
 
+def tile_borders_str(tile):
+    return tuple(map(border_str, tile_borders(tile)))
+
+
 def make_border(b):
     return np.array([ord(x) for x in b], dtype=np.int8)
 
@@ -102,6 +107,27 @@ def other_tiles(tiles, current_id):
             yield t_id, t
 
 
+def border_info(borders):
+    r = collections.defaultdict(list)
+    for t_id, variants in borders.items():
+        for v_id, bs in enumerate(variants):
+            for b, d in zip(bs, ALL_DIRS):
+                # b_str = border_str(b)
+                r[b].append((t_id, v_id, d))
+    return r
+
+
+def draw_state(state, w):
+    for row in range(w):
+        for col in range(w):
+            if x := state.get((row, col)):
+                tid, vid = x
+                print(f"{tid:4}.{vid:4}  ", end="")
+            else:
+                print("____.____  ", end="")
+        print()
+
+
 def reconstruct(tiles):
     w = int(np.sqrt(len(tiles)))
     assert w * w == len(tiles), "not a square !"
@@ -109,44 +135,76 @@ def reconstruct(tiles):
 
     tiles_transforms = {t_id: list(tile_transforms(x)) for t_id, x in
                         tiles.items()}
-    tiles_borders = {t_id: [tile_borders(x) for x in cfg]
+    tiles_borders = {t_id: [tile_borders_str(x) for x in cfg]
                      for t_id, cfg in tiles_transforms.items()}
+    info = border_info(tiles_borders)
 
-    # def recons()
-    pass
-    return 42
+    def borders_match(t_id, borders, dirs, values):
+        for d, v in zip(dirs, values):
+            b = borders[d]
+            if v is None:
+                if not all(id == t_id for id, _, _ in info[b]):
+                    return False
+            elif b != v:
+                return False
+        return True
+
+    def blocs_matching(dirs, values):
+        for t_id, variants in tiles_borders.items():
+            for v_id, borders in enumerate(variants):
+                if borders_match(t_id, borders, dirs, values):
+                    yield t_id, v_id
+
+    configs = []
+    for t_id, v_id in blocs_matching([TOP, LEFT], (None, None)):
+        configs.append({(0, 0): (t_id, v_id)})
+
+    for i in range(500):
+        current = configs[-1]
+        reserved_ids = set(t for t, _ in current.values())
+        remaining = set(
+            x for p in current.keys() for x in adjacent(p)
+            if in_range(x, w) and x not in current)
+        if not remaining:
+            # We can also yield to get all configs
+            yield current
+
+        print(f"=== round {i} (n_configs={len(configs)}) ===")
+        draw_state(current, w)
+        print()
+
+        loc = next(iter(remaining))
+        dirs = []
+        values = []
+        for dir, adj in zip(ALL_DIRS, adjacent(loc)):
+            if not in_range(adj, w):
+                dirs.append(dir)
+                values.append(None)
+            elif other := current.get(adj):
+                o_tid, o_vid = other
+                dirs.append(dir)
+                values.append(tiles_borders[o_tid][o_vid][OPPOSITE[dir]])
+        matching = list(blocs_matching(dirs, values))
+        print(f"constraints: {loc}, {dirs}, {values} ==> {matching}")
+        configs = configs[:-1]
+        for m_tid, m_vid in matching:
+            if m_tid in reserved_ids:
+                continue
+            cfg = copy.deepcopy(current)
+            cfg[loc] = (m_tid, m_vid)
+            configs.append(cfg)
 
 
 def aoc_run(input_file):
     lines = list(open(input_file))
     tiles = parse(lines)
     tiles = {pid: np.array(x, dtype=np.int8) for pid, x in tiles.items()}
-    m = reconstruct(tiles)
-
-    n = part_1(tiles)
-    print("part 1:", n)
-
-    # ts = {pid: list(tile_transforms(x)) for pid, x in tiles.items()}
-    # bs = {pid: [tile_borders(x) for x in cfg] for pid, cfg, in ts.items()}
-
-    # print(draw(tiles[1171]))
-    # print("")
-    # reconstruct(parts, 1427)
-    # return
-    # for border in tile_borders(parts[1171]):
-    #     print("border:", ''.join(map(chr, border)))
-    # s = set(part_1(bs))
-    # print(prod(s), s)
-    # for pid, cfg_id, cfg in matching_tile(bs, make_border("...##....."), TOP):
-    #     print("matching:", pid, cfg_id)
-    #     print(draw(cfg))
-    # part 1: 107399567124539
-
-    # for pid, cfg in matching_borders()
-    # print("\n====\n")
-    # for d in transformed(parts[1171]):
-    #     print(draw(d))
-    #     print()
+    w = int(np.sqrt(len(tiles)))
+    solution = next(reconstruct(tiles))
+    print(solution)
+    corners = [(0, 0), (w - 1, 0), (0, w - 1), (w - 1, w - 1)]
+    print("part 1:", prod([solution[c][0] for c in corners]))
+    return
 
 
 if __name__ == '__main__':
