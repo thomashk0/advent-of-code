@@ -1,5 +1,6 @@
 import collections
 import copy
+import itertools
 import re
 import numpy as np
 
@@ -128,15 +129,8 @@ def draw_state(state, w):
         print()
 
 
-def reconstruct(tiles):
-    w = int(np.sqrt(len(tiles)))
-    assert w * w == len(tiles), "not a square !"
-    print(f"dimensions: {w}x{w}")
-
-    tiles_transforms = {t_id: list(tile_transforms(x)) for t_id, x in
-                        tiles.items()}
-    tiles_borders = {t_id: [tile_borders_str(x) for x in cfg]
-                     for t_id, cfg in tiles_transforms.items()}
+def reconstruct(tiles_borders):
+    w = int(np.sqrt(len(tiles_borders)))
     info = border_info(tiles_borders)
 
     def borders_match(t_id, borders, dirs, values):
@@ -169,9 +163,9 @@ def reconstruct(tiles):
             # We can also yield to get all configs
             yield current
 
-        print(f"=== round {i} (n_configs={len(configs)}) ===")
-        draw_state(current, w)
-        print()
+        # print(f"=== round {i} (n_configs={len(configs)}) ===")
+        # draw_state(current, w)
+        # print()
 
         loc = next(iter(remaining))
         dirs = []
@@ -185,7 +179,7 @@ def reconstruct(tiles):
                 dirs.append(dir)
                 values.append(tiles_borders[o_tid][o_vid][OPPOSITE[dir]])
         matching = list(blocs_matching(dirs, values))
-        print(f"constraints: {loc}, {dirs}, {values} ==> {matching}")
+        # print(f"constraints: {loc}, {dirs}, {values} ==> {matching}")
         configs = configs[:-1]
         for m_tid, m_vid in matching:
             if m_tid in reserved_ids:
@@ -195,16 +189,65 @@ def reconstruct(tiles):
             configs.append(cfg)
 
 
+def rebuild(solution, transforms):
+    w = int(np.sqrt(len(transforms)))
+    tw = len(next(iter(transforms.values()))[0]) - 2
+    # print(w, tw)
+    n = w * tw
+    m = np.zeros((n, n), dtype=np.int8)
+
+    for (x, y), (t_id, v_id) in solution.items():
+        t = transforms[t_id][v_id]
+        t = t[1:-1, 1:-1]
+        m[y * tw: (y + 1) * tw, x * tw: (x + 1) * tw] = t
+    return m
+
+
+PATTERN_LINES = [
+    "                  # ",
+    "#    ##    ##    ###",
+    " #  #  #  #  #  #   "]
+
+
+def find_sea_of_monster(r):
+    def conv(c):
+        return 0 if c == ' ' else ord(c)
+
+    pat = np.array([[conv(c) for c in line] for line in PATTERN_LINES],
+                   dtype=np.int8)
+    ph, pw = pat.shape
+    n = r.shape[0]
+    total = 0
+    for x, y in itertools.product(range(n - pw), range(n - ph)):
+        window = r[y:y + ph, x: x + pw]
+        if np.all((window & pat) == pat):
+            total += np.count_nonzero(pat == ord('#'))
+    return total, np.count_nonzero(r == ord('#')) - total
+
+
 def aoc_run(input_file):
     lines = list(open(input_file))
     tiles = parse(lines)
     tiles = {pid: np.array(x, dtype=np.int8) for pid, x in tiles.items()}
     w = int(np.sqrt(len(tiles)))
-    solution = next(reconstruct(tiles))
-    print(solution)
+    assert w * w == len(tiles), "not a square !"
+    print(f"dimensions: {w}x{w}")
+
+    transforms = {t_id: list(tile_transforms(x)) for t_id, x in
+                  tiles.items()}
+    borders = {t_id: [tile_borders_str(x) for x in cfg]
+               for t_id, cfg in transforms.items()}
+
+    solution = next(reconstruct(borders))
     corners = [(0, 0), (w - 1, 0), (0, w - 1), (w - 1, w - 1)]
     print("part 1:", prod([solution[c][0] for c in corners]))
-    return
+
+    r = rebuild(solution, transforms)
+    for t in tile_transforms(r):
+        in_monster, not_monster = find_sea_of_monster(t)
+        if in_monster:
+            print("part 2:", not_monster)
+            break
 
 
 if __name__ == '__main__':
