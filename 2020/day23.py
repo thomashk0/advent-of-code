@@ -1,8 +1,9 @@
 import itertools
-
+import array
 
 def make_circle(elts):
-    succ = [0] * (max(elts) + 1)
+    succ = array.array('I')
+    succ.fromlist([0] * (max(elts) + 1))
     for p, n in zip(elts, itertools.chain(elts[1:], (elts[0],))):
         succ[p] = n
     return succ
