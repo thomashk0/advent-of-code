@@ -3,4 +3,7 @@
   (:export
    :lines
    :lines-from-stream
-   :split))
+   :split
+   :ints
+   :split-ints
+   :read-file))
