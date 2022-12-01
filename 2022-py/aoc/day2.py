@@ -27,7 +27,7 @@ def aoc_solution():
         "example": (f"{DAY}-input-ex", 1, 1),
         "real": (f"{DAY}-input-1", 23, 32),
     }
-    return aoc.AocSolution(f"2022-{DAY}", Input, part_1, part_2), inputs
+    return aoc.AocRunner(f"2022-{DAY}", Input, part_1, part_2), inputs
 
 
 if __name__ == "__main__":
