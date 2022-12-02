@@ -1,37 +1,18 @@
-"""
-Good starting skeleton.
-"""
-from pathlib import Path
+# Skeleton for days
 
-import aoc
-
-DAY = Path(__file__).name
+def parse_input(raw: str):
+    return raw.strip()
 
 
-class Input(aoc.AocInput):
-    def __init__(self, lines):
-        self.lines = lines
-
-    @classmethod
-    def from_path(cls, path):
-        return cls(aoc.lines(path))
+def part_1(input):
+    return len(input)
 
 
-def part_1(input: Input):
-    return None
+def part_2(input):
+    return 2 * len(input)
 
 
-def part_2(input: Input):
-    return None
-
-
-def aoc_solution():
-    inputs = {
-        # "example": (f"{DAY}-input-ex", 1, 1),
-        # "real": (f"{DAY}-input-1", 23, 32),
+def aoc_inputs():
+    return {
+        "example": ("day0-input-ex", 4, 8),
     }
-    return aoc.AocRunner(f"2022-{DAY}", Input, part_1, part_2), inputs
-
-
-if __name__ == "__main__":
-    aoc.aoc_run_solver(aoc_solution)
