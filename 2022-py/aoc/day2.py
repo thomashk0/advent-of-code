@@ -1,34 +1,43 @@
-from pathlib import Path
-
-import aoc
-
-DAY = Path(__file__).name
-
-
-class Input(aoc.AocInput):
-    def __init__(self, lines):
-        self.lines = lines
-
-    @classmethod
-    def from_path(cls, path):
-        return cls(aoc.lines(path))
+POINTS = {"A": 1, "B": 2, "C": 3}  # rock, paper, chisel
+RENAME = {"X": "A", "Y": "B", "Z": "C"}
+WIN_AGAINST = {"A": "C", "C": "B", "B": "A"}
+LOOSE_AGAINST = {"C": "A", "B": "C", "A": "B"}
 
 
-def part_1(input: Input):
-    return None
+def parse_input(raw: str):
+    return [r.split() for r in raw.splitlines()]
 
 
-def part_2(input: Input):
-    return None
+def outcome(a_choice, b_choice):
+    s = POINTS[a_choice]
+    if a_choice == b_choice:
+        return s + 3
+    elif WIN_AGAINST[a_choice] == b_choice:
+        return s + 6
+    else:
+        return s
 
 
-def aoc_solution():
-    inputs = {
-        "example": (f"{DAY}-input-ex", 1, 1),
-        "real": (f"{DAY}-input-1", 23, 32),
+def part_1(input):
+    input = [(c[0], RENAME[c[1]]) for c in input]
+    return sum([outcome(y, x) for x, y in input])
+
+
+def find_choice(x, y):
+    if y == "Y":
+        return x
+    elif y == "X":
+        return WIN_AGAINST[x]
+    else:
+        return LOOSE_AGAINST[x]
+
+
+def part_2(input):
+    return sum([outcome(find_choice(x, y), x) for x, y in input])
+
+
+def aoc_inputs():
+    return {
+        "example": ("day2-input-ex", 15, 12),
+        "real": ("day2-input-1", 9759, 12429),
     }
-    return aoc.AocRunner(f"2022-{DAY}", Input, part_1, part_2), inputs
-
-
-if __name__ == "__main__":
-    aoc.aoc_run_solver(aoc_solution)
