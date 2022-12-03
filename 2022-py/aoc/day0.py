@@ -1,5 +1,6 @@
 # Skeleton for days
 
+
 def parse_input(raw: str):
     return raw.strip()
 
