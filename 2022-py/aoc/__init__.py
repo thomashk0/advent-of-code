@@ -7,6 +7,10 @@ from typing import Union, List, Iterable
 import numba
 
 
+def ints(s: str, sep=" "):
+    return map(int, s.split(sep))
+
+
 def lines(f: Union[str, Path], encoding=None):
     return Path(f).read_text(encoding=encoding).splitlines()
 
