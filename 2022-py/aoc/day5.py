@@ -1,4 +1,3 @@
-# Skeleton for days
 import collections
 import copy
 import re
