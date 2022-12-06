@@ -80,6 +80,11 @@ C_GREEN = "\033[32m"
 C_ENDCOLOR = "\033[0m"
 
 
+class Str:
+    def __init__(self, value: str):
+        self.value = value
+
+
 class AocRunner:
     def __init__(self, day, parse_input, part_1=None, part_2=None):
         self.day = day
@@ -89,7 +94,10 @@ class AocRunner:
 
     def run(self, src, part_1_check=None, part_2_check=None, prefix="", verbose=True):
         t_parse = time.monotonic()
-        input = self.parse_input(Path(src).read_text())
+        if isinstance(src, Str):
+            input = src.value
+        else:
+            input = self.parse_input(Path(src).read_text())
         t_parse = time.monotonic() - t_parse
         prefix = f"[{self.day}.{prefix}] "
         print(f"{prefix}input loading (elapsed: {t_parse:.4f}s)")
@@ -127,8 +135,10 @@ def aoc_run(day):
     m = importlib.import_module(f"aoc.{day}")
     runner, tests = _load_module(day, m)
     for k, (path, part_1_check, part_2_check) in tests.items():
+        if not isinstance(path, Str):
+            path = Path("assets") / path
         runner.run(
-            Path("assets") / path,
+            path,
             part_1_check=part_1_check,
             part_2_check=part_2_check,
             prefix=k,
