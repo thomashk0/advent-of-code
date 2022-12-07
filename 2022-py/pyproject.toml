@@ -9,6 +9,7 @@ python = "^3.9"
 numba = "^0.56.4"
 numpy = "^1.23.5"
 scipy = "^1.9.3"
+networkx = "^2.8.8"
 
 [tool.poetry.dev-dependencies]
 black = "^22.10.0"
