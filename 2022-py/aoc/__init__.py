@@ -63,7 +63,6 @@ def snd(x):
     return x[1]
 
 
-@numba.njit()
 def prod(xs):
     acc = 1
     for x in xs:
