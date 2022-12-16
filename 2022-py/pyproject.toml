@@ -10,6 +10,8 @@ numba = "^0.56.4"
 numpy = "^1.23.5"
 scipy = "^1.9.3"
 networkx = "^2.8.8"
+tqdm = "^4.64.1"
+z3-solver = "^4.11.2"
 
 [tool.poetry.dev-dependencies]
 black = "^22.10.0"

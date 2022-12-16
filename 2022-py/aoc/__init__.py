@@ -4,8 +4,6 @@ import re
 from pathlib import Path
 from typing import Union, List, Iterable
 
-import numba
-
 
 def ints(s: str, sep=" "):
     return map(int, s.split(sep))
@@ -13,6 +11,14 @@ def ints(s: str, sep=" "):
 
 def lines(f: Union[str, Path], encoding=None):
     return Path(f).read_text(encoding=encoding).splitlines()
+
+
+def clip(x, x_min, x_max):
+    return min(max(x, x_min), x_max)
+
+
+def unit_clip(x):
+    return min(max(x, -1), 1)
 
 
 def lmap(f, *iterables):
@@ -44,6 +50,40 @@ def flatten(l):
     return [i for x in l for i in x]
 
 
+class SparseMap:
+    def __init__(self, data, default):
+        self.default = default
+        self.data = data
+
+    def limits(self):
+        xs = [x for x, _ in self.data.keys()]
+        ys = [y for _, y in self.data.keys()]
+        xmin, xmax = min(xs), max(xs)
+        ymin, ymax = min(ys), max(ys)
+        return (xmin, xmax), (ymin, ymax)
+
+    @classmethod
+    def from_lines(cls, lines, default=' '):
+        data = {}
+        for line_num, line in enumerate(lines):
+            for col_num, char in enumerate(line.strip()):
+                data[(line_num, col_num)] = char
+        return cls(data, default)
+
+    def draw(self):
+        (x_min, x_max), (y_min, y_max) = self.limits()
+        lines = []
+        for y in range(y_min, y_max + 1):
+            lines.append("".join(self.data.get((x, y), self.default) for x in range(x_min, x_max + 1)))
+        return "\n".join(lines)
+
+    def __getitem__(self, item):
+        return self.data.get(item, self.default)
+
+    def __setitem__(self, key, value):
+        self.data[key] = value
+
+
 def transpose(l):
     """
     >>> transpose([[1, 2, 3], [4, 5, 6]])
@@ -71,7 +111,7 @@ def prod(xs):
 
 
 def chunks(seq, size):
-    return (seq[pos : pos + size] for pos in range(0, len(seq), size))
+    return (seq[pos: pos + size] for pos in range(0, len(seq), size))
 
 
 C_RED = "\033[31m"
