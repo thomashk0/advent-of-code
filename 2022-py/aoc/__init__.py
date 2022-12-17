@@ -56,6 +56,8 @@ class SparseMap:
         self.data = data
 
     def limits(self):
+        if len(self.data) == 0:
+            return (0, 0), (0, 0)
         xs = [x for x, _ in self.data.keys()]
         ys = [y for _, y in self.data.keys()]
         xmin, xmax = min(xs), max(xs)
@@ -63,18 +65,23 @@ class SparseMap:
         return (xmin, xmax), (ymin, ymax)
 
     @classmethod
-    def from_lines(cls, lines, default=' '):
+    def from_lines(cls, lines, default=" "):
         data = {}
         for line_num, line in enumerate(lines):
             for col_num, char in enumerate(line.strip()):
                 data[(line_num, col_num)] = char
         return cls(data, default)
 
-    def draw(self):
+    def draw(self, revert=False):
         (x_min, x_max), (y_min, y_max) = self.limits()
         lines = []
-        for y in range(y_min, y_max + 1):
-            lines.append("".join(self.data.get((x, y), self.default) for x in range(x_min, x_max + 1)))
+        # ys =
+        for y in reversed(range(y_min, y_max + 1)):
+            lines.append(
+                "".join(
+                    self.data.get((x, y), self.default) for x in range(x_min, x_max + 1)
+                )
+            )
         return "\n".join(lines)
 
     def __getitem__(self, item):
@@ -111,7 +118,7 @@ def prod(xs):
 
 
 def chunks(seq, size):
-    return (seq[pos: pos + size] for pos in range(0, len(seq), size))
+    return (seq[pos : pos + size] for pos in range(0, len(seq), size))
 
 
 C_RED = "\033[31m"

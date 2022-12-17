@@ -17,12 +17,12 @@ def parse_input(raw: str):
         for (x, y), (x_old, y_old) in zip(p[1:], p):
             dx = max(min(x - x_old, 1), -1)
             dy = max(min(y - y_old, 1), -1)
-            sparse_map[(x, y)] = '#'
+            sparse_map[(x, y)] = "#"
             while x_old != x or y_old != y:
-                sparse_map[(x_old, y_old)] = '#'
+                sparse_map[(x_old, y_old)] = "#"
                 x_old += dx
                 y_old += dy
-    return SparseMap(sparse_map, '.')
+    return SparseMap(sparse_map, ".")
 
 
 DIRS = [(0, 1), (-1, 1), (1, 1)]
@@ -40,7 +40,7 @@ def spawn_sand(input) -> bool:
                 new_loc = t
                 break
         if new_loc is None:
-            input.data[cx, cy] = 'O'
+            input.data[cx, cy] = "O"
             return False
         elif new_loc[1] > y_max:
             return True
@@ -67,10 +67,10 @@ def spawn_sand_2(input, y_max):
                 new_loc = t
                 break
         if new_loc is None:
-            input.data[cx, cy] = 'O'
+            input.data[cx, cy] = "O"
             return
         elif new_loc[1] == y_max + 2:
-            input.data[cx, cy] = 'O'
+            input.data[cx, cy] = "O"
             return
         cx, cy = new_loc
 
@@ -79,7 +79,7 @@ def part_2(input):
     i = 0
     _, (_, y_max) = input.limits()
     while True:
-        if input.data.get((500, 0)) == 'O':
+        if input.data.get((500, 0)) == "O":
             return i
         spawn_sand_2(input, y_max)
         i += 1
@@ -88,5 +88,5 @@ def part_2(input):
 def aoc_inputs():
     return {
         "example": ("day14-input-ex", 24, 93),
-        "real": ("day14-input-1", None, None)
+        "real": ("day14-input-1", None, None),
     }
