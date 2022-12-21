@@ -1,8 +1,7 @@
-# Skeleton for days
 import copy
-
-from z3 import Solver, Int, Q, Real
 import re
+
+from z3 import Solver, Real
 
 DEF_RE = re.compile(r"(\w+): (\d+)")
 MATH_RE = re.compile(r"(\w+): (\w+) ([+*/-]) (\w+)")
@@ -80,10 +79,10 @@ def part_2(ctx):
     eq = l_expr == r_expr
     solver = Solver()
     solver.add(eq)
-    print(solver.check())
+    solver.check()
     m = solver.model()
     return m[humn].as_long()
 
 
 def aoc_inputs():
-    return {"example": ("day21-input-ex", 152, 8), "real": ("day21-input-1", 301, None)}
+    return {"example": ("day21-input-ex", 152, 301), "real": ("day21-input-1", 83056452926300, 3469704905529)}
