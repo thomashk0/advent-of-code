@@ -34,7 +34,7 @@ def cmod(x, m):
 
 
 def mix_round(d):
-    z_index = np.argwhere(d[:, 0] == 0).flatten()[0]
+    # z_index = np.argwhere(d[:, 0] == 0).flatten()[0]
     for offset in range(len(d)):
         x, p, n = d[offset]
         if x == 0:
@@ -87,5 +87,9 @@ def part_2(seq):
 def aoc_inputs():
     return {
         "example": ("day20-input-ex", 3, 1623178306),
-        "real": ("day20-input-1", 4151, 7848878698663)  # 988399382 too low, too high 8380469593878
+        "real": (
+            "day20-input-1",
+            4151,
+            7848878698663,
+        ),  # 988399382 too low, too high 8380469593878
     }
