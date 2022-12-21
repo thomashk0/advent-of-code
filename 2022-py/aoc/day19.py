@@ -41,16 +41,6 @@ def tuple_sub(xs, ys):
     return tuple(x - y for x, y in zip(xs, ys))
 
 
-def optimal_production(cost, bots, minerals, duration):
-    choices = []
-    for b in range(0, duration):
-        new_minerals = minerals - cost * b
-        for step in range(0, duration):
-            new_minerals += bots + min(step, b)
-        choices.append(new_minerals)
-    return choices
-
-
 def prod_time(target, bots, minerals):
     """
     Number of cycles before we can start building the given bot.
@@ -98,38 +88,6 @@ def sanity_check():
                 assert p_ref == p_actual
 
 
-# @dataclass
-# class Context:
-#     cache: Any
-
-def is_optimal(costs, robots):
-    # Can we produce one robot per cycle?
-    for r, c in zip(robots, costs):
-        if c != 0 and r < c:
-            return False
-    return True
-
-
-# def explore(costs, duration):
-#     config =
-#     for i in range(duration):
-#         pass
-
-# def available_choices(costs, robots, minerals, duration):
-#     max_needed = np.sum(costs, axis=0)
-#     for bot_id in range(costs.shape[0]):
-#         delay = bot_prod_time(costs[bot_id], robots, minerals)
-#         if max_needed[bot_id] != 0 and robots[bot_id] == max_needed[bot_id]:
-#             continue
-#         if delay != -1 and delay < duration:
-#             minerals_new = tuple(m + (delay + 1) * b - c for m, b, c in zip(minerals, robots, costs[bot_id]))
-#             bots_new = tuple(x + int(i == bot_id) for i, x in enumerate(robots))
-#             # FIXME: check delay is correct
-#             yield bots_new, minerals_new, delay + 1
-#     minerals_without_bots = tuple(m + duration * b for m, b in zip(minerals, robots))
-#     yield robots, minerals_without_bots, duration
-
-
 @dataclass
 class Ctx:
     costs: np.ndarray
@@ -138,13 +96,23 @@ class Ctx:
 
 
 def next_configs(ctx, minerals, bots, remaining):
+    minerals = list(minerals)
+    for i, m in enumerate(minerals):
+        if 0 < ctx.max_needed[i] <= bots[i]:
+            minerals[i] = min(minerals[i], ctx.max_needed[i])
+        if i < 3:
+            minerals[i] = min(minerals[i], 50)
+    minerals = tuple(minerals)
     for i, (b, cost) in enumerate(zip(bots, ctx.costs)):
         if 0 < ctx.max_needed[i] <= bots[i]:
+            # print(minerals)
             continue
         delay = bot_prod_time(cost, bots, minerals)
         if delay == -1 or delay >= remaining:
             continue
-        new_minerals = tuple(m - c + (delay + 1) * bb for m, c, bb in zip(minerals, cost, bots))
+        new_minerals = tuple(
+            m - c + (delay + 1) * bb for m, c, bb in zip(minerals, cost, bots)
+        )
         if any(m < 0 for m in new_minerals):
             raise NotImplemented("unreachable")
         new_bots = tuple(x + int(j == i) for j, x in enumerate(bots))
@@ -159,6 +127,13 @@ def memo_optimal_prod(ctx: Ctx, minerals, bots, duration):
     if v is not None:
         return v
     r = optimal_prod(ctx, minerals, bots, duration)
+    if len(ctx.cache) > 4e6:
+        import itertools
+
+        to_remove = list(itertools.islice(ctx.cache.keys(), 0, 1000 * 1000))
+        for k in to_remove:
+            del ctx.cache[k]
+
     ctx.cache[key] = r
     return r
 
@@ -173,76 +148,17 @@ def optimal_prod(ctx: Ctx, minerals, bots, duration):
     return best
 
 
-def valid_configs(ctx: Ctx, minerals, bots):
-    for i in range(len(bots)):
-        if 0 < ctx.max_needed[i] <= bots[i]:
-            continue
-        new_minerals = minerals - ctx.costs[i]
-        if np.any(new_minerals < 0):
-            continue
-        new_bots = np.copy(bots)
-        new_bots[i] += 1
-        yield new_minerals + bots, new_bots
-    yield minerals + bots, bots
-
-
-def memo_explore(ctx, remaining, minerals, bots):
-    key = remaining, tuple(minerals), tuple(bots)
-    v = ctx.cache.get(key)
-    if v is not None:
-        return v
-    r = explore(ctx, remaining, minerals, bots)
-    ctx.cache[key] = r
-    return r
-
-
-def explore(ctx: Ctx, remaining, minerals, bots):
-    if remaining == 0:
-        return minerals, bots
-    # print(f"\nexplore(remaining={remaining}): minerals={minerals}, bots={bots}")
-    choices = list(valid_configs(ctx, minerals, bots))
-    # for c in choices:
-    #     print(f"   - {c}")
-    configs = list(memo_explore(ctx, remaining - 1, m, b) for m, b in choices)
-    # Idea: truncate the number of minerals (too much minerals is useless!) => prevents caching...
-    #
-    return max(configs, key=lambda x: tuple(reversed(x[0])))
-
-
-def greedy_explore(ctx: Ctx, duration, minerals, bots):
-    for i in range(duration):
-        search_depth = min(duration - i, 11)
-        scores = []
-        for m, b in valid_configs(ctx, minerals, bots):
-            scores.append(((m, b), memo_explore(ctx, search_depth, m, b)))
-        # print(f"step={i}:")
-        # for cfg, r in scores:
-        #     print(f"  - {cfg} ==> {r}")
-        best_m, best_b = max(scores, key=lambda x: tuple(reversed(x[1][0])))[0]
-        minerals, bots = best_m, best_b
-        # print(f"  * selecting: {minerals} {bots}")
-    return minerals, bots
-
-
 def part_1(costs):
+    # return 1389
     sanity_check()
     r_init = (1, 0, 0, 0)
     s_init = (0, 0, 0, 0)
-    # c = costs[1]
-    # ctx = Ctx(costs=c, max_needed=np.max(c, axis=0), cache={})
-    # print("valid configs:")
-    # for cfg in next_configs(ctx, s_init, r_init, 5):
-    #     print(f"- {cfg}")
-    # print(memo_optimal_prod(ctx, s_init, r_init, 24))
-    # return
 
     quality_level = 0
     scores = []
     for i in range(len(costs)):
         c = costs[i]
         ctx = Ctx(costs=c, max_needed=np.max(c, axis=0), cache={})
-        # print(explore(ctx, 10, np.zeros(4, dtype=np.int64), np.array([1, 0, 0, 0], dtype=np.int64)))
-        # r = greedy_explore(ctx, 24, np.zeros(4, dtype=np.int64), np.array([1, 0, 0, 0], dtype=np.int64))
         r = memo_optimal_prod(ctx, s_init, r_init, 24)
         scores.append(r)
         print(r)
@@ -251,12 +167,25 @@ def part_1(costs):
     return quality_level
 
 
-def part_2(input):
-    return 2 * len(input)
+def part_2(costs):
+    r_init = (1, 0, 0, 0)
+    s_init = (0, 0, 0, 0)
+    xs = []
+    for i in range(0, 3):
+        c = costs[i]
+        ctx = Ctx(costs=c, max_needed=np.max(c, axis=0), cache={})
+        r = memo_optimal_prod(ctx, s_init, r_init, 32)
+        print(r)
+        xs.append(r)
+    return xs[0] * xs[1] * xs[2]
 
 
 def aoc_inputs():
     return {
         # "example": ("day19-input-ex", 33, 8),
-        "real": ("day19-input-1", None, None)  ## 1035 your answer is too low, 1115: too low, 1299: too low
+        "real": (
+            "day19-input-1",
+            1389,
+            None,
+        )  ## 1035 your answer is too low, 1115: too low, 1299: too low
     }

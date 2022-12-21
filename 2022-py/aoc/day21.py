@@ -85,4 +85,7 @@ def part_2(ctx):
 
 
 def aoc_inputs():
-    return {"example": ("day21-input-ex", 152, 301), "real": ("day21-input-1", 83056452926300, 3469704905529)}
+    return {
+        "example": ("day21-input-ex", 152, 301),
+        "real": ("day21-input-1", 83056452926300, 3469704905529),
+    }
