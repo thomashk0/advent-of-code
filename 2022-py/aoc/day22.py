@@ -59,11 +59,26 @@ def part_1(args):
     m, steps = args
     wi, wj = get_wraps(m)
 
-    cursor = (0, wj[0][0])
-    direction = (0, 1)
-    print(rotate_l(direction))
-    print(rotate_r(direction))
+    wraps = {}
+    for j, (wmin, wmax) in enumerate(wi):
+        wraps[wmax + 1, j, (1, 0)] = (wmin, j)
+        wraps[wmin - 1, j, (-1, 0)] = (wmax, j)
+    for i, (wmin, wmax) in enumerate(wj):
+        wraps[i, wmax + 1, (0, 1)] = (i, wmin)
+        wraps[i, wmin - 1, (0, -1)] = (i, wmax)
 
+    cursor = (0, wj[0][0])
+
+    cursor, direction = simulate(m, steps, cursor, wraps)
+    return get_password(cursor, direction)
+
+
+def get_password(cursor, direction):
+    return 1000 * (1 + cursor[0]) + 4 * (1 + cursor[1]) + FACING_VALUE[direction]
+
+
+def simulate(m, steps, cursor, wraps):
+    direction = (0, 1)
     for p in steps:
         if p == "L":
             direction = rotate_l(direction)
@@ -71,27 +86,15 @@ def part_1(args):
             direction = rotate_r(direction)
         else:
             for i in range(p):
-                c_i, c_j = cursor
                 n_i = cursor[0] + direction[0]
                 n_j = cursor[1] + direction[1]
-
-                # if 0 <= n_j <= len(wi):
-                if n_i < wi[c_j][0]:
-                    n_i = wi[c_j][1]
-                if n_i > wi[c_j][1]:
-                    n_i = wi[c_j][0]
-                # if 0 <= n_i <= len(wj):
-                if n_j < wj[c_i][0]:
-                    n_j = wj[c_i][1]
-                if n_j > wj[c_i][1]:
-                    n_j = wj[c_i][0]
-
+                wrapped = wraps.get((n_i, n_j, direction))
+                if wrapped is not None:
+                    n_i, n_j = wrapped
                 if m[n_i, n_j] == "#":
                     break
                 cursor = n_i, n_j
-    print(f"final state: cursor={cursor}, facing={direction}")
-
-    return 1000 * (1 + cursor[0]) + 4 * (1 + cursor[1]) + FACING_VALUE[direction]
+    return cursor, direction
 
 
 def part_2(input):
@@ -101,5 +104,5 @@ def part_2(input):
 def aoc_inputs():
     return {
         "example": ("day22-input-ex", 6032, 8),
-        "real": ("day22-input-1", None, None),
+        "real": ("day22-input-1", 164014, None),
     }
