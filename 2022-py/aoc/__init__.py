@@ -76,7 +76,7 @@ class SparseMap:
         (x_min, x_max), (y_min, y_max) = self.limits()
         lines = []
         # ys =
-        for y in reversed(range(y_min, y_max + 1)):
+        for y in range(y_min, y_max + 1):
             lines.append(
                 "".join(
                     self.data.get((x, y), self.default) for x in range(x_min, x_max + 1)
