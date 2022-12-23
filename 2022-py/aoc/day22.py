@@ -5,7 +5,7 @@ STEP_RE = re.compile(r"(\d+|[LR])")
 
 
 def cvt(x):
-    if x == 'R' or x == 'L':
+    if x == "R" or x == "L":
         return x
     return int(x)
 
@@ -25,7 +25,7 @@ def parse_input(raw: str):
         if line == "":
             break
         for j, c in enumerate(line):
-            if c != ' ':
+            if c != " ":
                 m[i, j] = c
     print(lines[-1])
     steps = list(map(cvt, STEP_RE.findall(lines[-1])))
@@ -52,12 +52,7 @@ def get_wraps(m):
     return wraps_y, wraps_x
 
 
-FACING_VALUE = {
-    (0, 1): 0,
-    (1, 0): 1,
-    (0, -1): 2,
-    (-1, 0): 3
-}
+FACING_VALUE = {(0, 1): 0, (1, 0): 1, (0, -1): 2, (-1, 0): 3}
 
 
 def part_1(args):
@@ -70,9 +65,9 @@ def part_1(args):
     print(rotate_r(direction))
 
     for p in steps:
-        if p == 'L':
+        if p == "L":
             direction = rotate_l(direction)
-        elif p == 'R':
+        elif p == "R":
             direction = rotate_r(direction)
         else:
             for i in range(p):
@@ -106,5 +101,5 @@ def part_2(input):
 def aoc_inputs():
     return {
         "example": ("day22-input-ex", 6032, 8),
-        "real": ("day22-input-1", None, None)
+        "real": ("day22-input-1", None, None),
     }

@@ -8,8 +8,8 @@ def parse_input(raw: str):
     m = {}
     for i, line in enumerate(raw.splitlines()):
         for j, c in enumerate(line):
-            if c == '#':
-                m[i, j] = '#'
+            if c == "#":
+                m[i, j] = "#"
     return m
 
 
@@ -24,7 +24,7 @@ DIRS = {
     "SE": (1, 1),
     "SW": (1, -1),
     "E": (0, 1),
-    "W": (0, -1)
+    "W": (0, -1),
 }
 
 
@@ -120,5 +120,5 @@ def part_2(args):
 def aoc_inputs():
     return {
         "example": ("day23-input-ex-2", 110, 20),
-        "real": ("day23-input-1", 4254, 992)
+        "real": ("day23-input-1", 4254, 992),
     }
