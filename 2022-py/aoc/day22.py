@@ -25,6 +25,14 @@ def adjacent(x, dirs):
         yield x[0] + dx, x[1] + dy
 
 
+def tuple_add(p, q):
+    return tuple(x + y for x, y in zip(p, q))
+
+
+def tuple_sub(p, q):
+    return tuple(x - y for x, y in zip(p, q))
+
+
 def parse_input(raw: str):
     m = {}
     lines = raw.splitlines()
@@ -66,7 +74,7 @@ def get_password(cursor, direction):
     return 1000 * (1 + cursor[0]) + 4 * (1 + cursor[1]) + FACING_VALUE[direction]
 
 
-def simulate(m, steps, cursor, wraps):
+def simulate(m, steps, cursor, apply_wrapping):
     direction = (0, 1)
 
     for p in steps:
@@ -76,11 +84,7 @@ def simulate(m, steps, cursor, wraps):
             direction = rotate_r(direction)
         else:
             for i in range(p):
-                n_i = cursor[0] + direction[0]
-                n_j = cursor[1] + direction[1]
-                wrapped = wraps.get((n_i, n_j, direction))
-                if wrapped is not None:
-                    n_i, n_j = wrapped
+                n_i, n_j = apply_wrapping(cursor, direction)
                 if m[n_i, n_j] == "#":
                     break
                 cursor = n_i, n_j
@@ -101,26 +105,65 @@ def part_1(args):
 
     cursor = (0, wj[0][0])
 
-    cursor, direction = simulate(m, steps, cursor, wraps)
+    def handle_wrap(src, dir):
+        n_i = src[0] + dir[0]
+        n_j = src[1] + dir[1]
+        wrapped = wraps.get((n_i, n_j, dir))
+        if wrapped is not None:
+            return wrapped
+        return n_i, n_j
+
+    cursor, direction = simulate(m, steps, cursor, handle_wrap)
     return get_password(cursor, direction)
 
 
 def scan_squares(m, start, width):
+    cube_map = {start: "T"}
     dirs = [(-width, 0), (width, 0), (0, width), (0, -width)]
     to_explore = {start}
     explored = {}
     s_id = 1
     while len(to_explore) > 0:
         head = to_explore.pop()
+        head_face = cube_map[head]
         explored[head] = s_id
         s_id += 1
-        for d in adjacent(head, dirs):
+        for d, (di, dj) in zip(adjacent(head, dirs), dirs):
             if d in explored:
                 continue
             if d not in m:
                 continue
+            cube_map[d] = CUBE_MAP[head_face][di // width, dj // width]
             to_explore.add(d)
-    return explored
+    return explored, cube_map
+
+
+#  T
+#  S
+#  B
+#  N
+#  T
+#  ENWSE
+CUBE_MAP = {
+    "T": {(-1, 0): "N", (1, 0): "S", (0, 1): "E", (0, -1): "W"},
+    "N": {(-1, 0): "B", (1, 0): "T", (0, 1): "E", (0, -1): "W"},
+    "S": {(-1, 0): "T", (1, 0): "B", (0, 1): "E", (0, -1): "W"},
+    "B": {(-1, 0): "S", (1, 0): "N", (0, 1): "E", (0, -1): "W"},
+    "E": {(-1, 0): "T", (1, 0): "B", (0, 1): "N", (0, -1): "S"},
+    "W": {(-1, 0): "T", (1, 0): "B", (0, 1): "S", (0, -1): "N"}
+}
+
+
+def cube_wrap(cube_origins, cube_ids, src, d, square_width):
+    q = tuple_add(src, d)
+    if q in cube_ids:
+        return q
+    # PHASE0: wrap inside the cube, then translate.
+    cube_offset = tuple_sub(q, cube_origins[cube_ids[src]])
+    wrapped = cube_offset[0] % square_width, cube_offset[1] % square_width
+    new_cube = CUBE_MAP[cube_ids[src]][d]
+    new_loc = tuple_add(cube_origins[new_cube], wrapped)
+    return new_loc
 
 
 def part_2(args):
@@ -129,33 +172,33 @@ def part_2(args):
 
     square_width = 4
     cursor = (0, wj[0][0])
-    squares = scan_squares(m, cursor, square_width)
+    squares, cube_map = scan_squares(m, cursor, square_width)
+    print("cube_map:", cube_map)
     debug = {}
     for loc, s_id in squares.items():
+        ch = cube_map[loc]
         for i in range(square_width):
             for j in range(square_width):
-                debug[loc[1] + j, loc[0] + i] = f"{s_id}"
+                debug[loc[0] + i, loc[1] + j] = ch
+
     print("squares:", squares)
-    d = aoc.SparseMap(debug, default=" ")
-
+    cube_origins = {v: k for k, v in cube_map.items()}
+    print("origins:", cube_origins)
+    d = aoc.SparseMap({(j, i): v for (i, j), v in debug.items()}, default=" ")
     print(d.draw())
-    #
-    # regions = {}
-    # for i in range(len(wj)):
-    #     for j in range(len(wi)):
-    #         if (i, j) in m:
-    #             wrap_i = wi[j]
-    #             wrap_j = wj[i]
-    #             regions[i, j] = (wrap_i, wrap_j)
 
-    # unique_regions =
-    # for i in range(len(wj)):
-    #     for j in range(len(wi)):
+    def handle_wrap(src, dir):
+        return cube_wrap(cube_origins, debug, src, dir, square_width)
+
+    cursor = (0, wj[0][0])
+    cursor, direction = simulate(m, steps, cursor, handle_wrap)
+    return get_password(cursor, direction)
+
     return 2 * len(args)
 
 
 def aoc_inputs():
     return {
-        "example": ("day22-input-0", 6032, 8),
+        "example": ("day22-input-ex", 6032, 8),
         # "real": ("day22-input-1", 164014, None),
     }

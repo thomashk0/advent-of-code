@@ -81,9 +81,6 @@ def part_1(ctx: Context):
     end = (ctx.shape[0] - 1, ctx.shape[1] - 2)
     assert ctx.data[start] == "."
     assert ctx.data[end] == "."
-    print(ctx.shape)
-    print(ctx.blizzards)
-    print(ctx.data)
 
     found = move_to(ctx, end, start)
     return found
@@ -107,17 +104,6 @@ def move_to(ctx, target, src):
                     continue
                 new_locs.add(head_new)
         locs = new_locs
-        # debug = aoc.SparseMap({tuple_reverse(k): v for k, v in ctx.data.items()}, default=".")
-        # for loc, d in ctx.blizzards:
-        #     if ctx.busy_cells[loc] > 1:
-        #         debug[tuple_reverse(loc)] = f"{ctx.busy_cells[loc]}"
-        #     else:
-        #         debug[tuple_reverse(loc)] = d
-        #     for loc in new_locs:
-        #         debug[tuple_reverse(loc)] = "X"
-        # print(f"After step: {i}")
-        # print(debug.draw())
-        # print()
     return found
 
 
@@ -126,10 +112,6 @@ def part_2(ctx):
     end = (ctx.shape[0] - 1, ctx.shape[1] - 2)
     assert ctx.data[start] == "."
     assert ctx.data[end] == "."
-    print(ctx.shape)
-    print(ctx.blizzards)
-    print(ctx.data)
-
     found0 = move_to(ctx, end, start)
     found1 = move_to(ctx, start, end)
     found2 = move_to(ctx, end, start)
@@ -137,4 +119,4 @@ def part_2(ctx):
 
 
 def aoc_inputs():
-    return {"example": ("day24-input-ex", 18, 54), "real": ("day24-input-1", 230, None)}
+    return {"example": ("day24-input-ex", 18, 54), "real": ("day24-input-1", 230, 713)}
