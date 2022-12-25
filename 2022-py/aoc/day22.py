@@ -137,7 +137,7 @@ def part_2(args):
                 debug[loc[1] + j, loc[0] + i] = f"{s_id}"
     print("squares:", squares)
     d = aoc.SparseMap(debug, default=" ")
-    
+
     print(d.draw())
     #
     # regions = {}

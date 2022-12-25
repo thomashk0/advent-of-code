@@ -7,12 +7,7 @@ from typing import Any
 
 import aoc
 
-DIRS = {
-    "<": (0, -1),
-    ">": (0, 1),
-    "^": (-1, 0),
-    "v": (1, 0)
-}
+DIRS = {"<": (0, -1), ">": (0, 1), "^": (-1, 0), "v": (1, 0)}
 
 
 def adjacent(x, dirs):
@@ -51,8 +46,12 @@ def parse_input(raw: str):
                 data[i, j] = "."
             else:
                 data[i, j] = c
-    return Context(data=data, busy_cells=set((i, j) for (i, j), _ in blizzards), blizzards=blizzards,
-                   shape=(len(lines), len(lines[0])))
+    return Context(
+        data=data,
+        busy_cells=set((i, j) for (i, j), _ in blizzards),
+        blizzards=blizzards,
+        shape=(len(lines), len(lines[0])),
+    )
 
 
 def update_blizzards(ctx: Context):
@@ -138,7 +137,4 @@ def part_2(ctx):
 
 
 def aoc_inputs():
-    return {
-        "example": ("day24-input-ex", 18, 54),
-        "real": ("day24-input-1", 230, None)
-    }
+    return {"example": ("day24-input-ex", 18, 54), "real": ("day24-input-1", 230, None)}
